@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 import torch
 import boto3
-from io import BytesIO
+import io
+from torch.utils.data import Dataset
 
 
 #######################################################
@@ -30,18 +31,20 @@ def load_s3_ims(bucket_name, filepath):
     files = list(s3_bucket.objects.filter(Prefix = filepath))
     
     im_dict = {}
-    label_dict = pd.DataFrame()
+    label_dict = {}
     for i, obj in enumerate(files):
     #     print(obj.bucket_name)
     #     print(obj.key)
         fl = obj.key[37:]
-    #     print(fl)
+        print(fl)
         anl_temp = 0
         anl_time = 0
         sub = 0
         dev = 0
+        
+        stream = io.BytesIO()
 
-        im = np.load(BytesIO(obj.get()['Body'].read()))
+        im = np.frombuffer(stream.getbuffer())
 
         im_index = len(im_dict)
         im_dict[im_index] = im
@@ -57,11 +60,25 @@ def load_s3_ims(bucket_name, filepath):
 
             sub = fl[s_idx]
             dev = fl[d_idx]
-
-        else:
+            
+        elif 'postexam' in fl:
             #extract temp, time, sub, dev from filename
             temp_stop_indx = fl.index('C')
-            anl_temp = int(fl[:temp_stop_indx])
+            anl_temp = int(fl[(temp_stop_indx - 2):temp_stop_indx])
+
+            time_start_indx = temp_stop_indx+2
+            time_stop_indx = fl.index('m')
+            time_stop_indx = time_stop_indx
+            anl_time = fl[time_start_indx:time_stop_indx]
+            anl_time = int(anl_time)
+
+            sub = 4
+            dev = 6
+
+        elif fl[-1] != '/':
+            #extract temp, time, sub, dev from filename
+            temp_stop_indx = fl.index('C')
+            anl_temp = int(fl[(temp_stop_indx - 2):temp_stop_indx])
 
             time_start_indx = temp_stop_indx+2
             time_stop_indx = fl.index('m')
@@ -76,12 +93,12 @@ def load_s3_ims(bucket_name, filepath):
             dev = fl[d_idx]
 
         #assign entry identifiers to label key
-        label_dict[idx] = {'Anneal_time' : int(anl_time), 'Anneal_temp' : int(anl_temp),
+        label_dict[i] = {'Anneal_time' : int(anl_time), 'Anneal_temp' : int(anl_temp),
                                  'Substrate' : int(sub), 'Device': int(dev)}
         
     label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')
             
-    return im_dict, labels
+    return im_dict, label_df
 
 
 class OPV_ImDataset(Dataset):
@@ -90,26 +107,26 @@ class OPV_ImDataset(Dataset):
     to initialize a custom dataset class that inherets from PyTorch. 
     """
     def __init__(self,bucket_name, filepath):
-        self.im_dict, self.im_labels = nuts.load_s3_ims(bucket_name, filepath)
-        
-        self.im_tensors = convert_ims_to_tensors(self.im_dict)
-        self.label_tensors = convert_labels_to_tensors(self.im_labels)
+        self.im_dict, self.im_labels = load_s3_ims(bucket_name, filepath)
 
     def __len__(self):
         return len(self.im_dict)
 
     def __getitem__(self, key):
-        return self.im_tensors[key], self.label_tensors[key]
+         
+        self.im_tensor = self.convert_im_to_tensors(self.im_dict[key])
+        self.label_tensor = self.convert_label_to_tensors(self.im_labels[key])
+        
+        return self.im_tensor, self.label_tensor
     
-    def convert_ims_to_tensors(self, im_dict):
-        N = len(im_dict)
+    def convert_im_to_tensors(self, im):
         
-        im_tensors = torch.tensor(im_dict).float()
-        im_tensors = im_tensors.view(N, 2, 256, 256)
+        im_tensor = torch.from_numpy(im).float()
+        im_tensor = im_tensors.view(2, 256, 256)
         
-        return im_tensors
+        return im_tensor
         
-    def convert_labels_to_tensors(label_df):
+    def convert_label_to_tensors(label_df):
         label_tensor =  torch.tensor(label_df.values.astype(np.float32)).float()
         
         return label_tensor
