@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 import torch
 import boto3
+from s3fs.core import S3FileSystem
 import io
 from torch.utils.data import Dataset
 
@@ -42,9 +43,8 @@ def load_s3_ims(bucket_name, filepath):
         sub = 0
         dev = 0
         
-        stream = io.BytesIO()
-
-        im = np.frombuffer(stream.getbuffer())
+        s3 = S3FileSystem()
+        im = np.load(s3.open(f'{bucket_name}/{fl}'))
 
         im_index = len(im_dict)
         im_dict[im_index] = im
