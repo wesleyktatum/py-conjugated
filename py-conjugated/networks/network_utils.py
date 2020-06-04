@@ -13,10 +13,10 @@ from s3fs.core import S3FileSystem
 import io
 from torch.utils.data import Dataset
 
-
 #######################################################
 #                  Data Utilities    
 #######################################################
+
 
 def load_s3_ims(bucket_name, filepath):
     """
@@ -37,100 +37,112 @@ def load_s3_ims(bucket_name, filepath):
     #     print(obj.bucket_name)
     #     print(obj.key)
         fl = obj.key[37:]
-        print(fl)
+#         print(fl)
         anl_temp = 0
         anl_time = 0
         sub = 0
         dev = 0
         
-        s3 = S3FileSystem()
-        im = np.load(s3.open(f'{bucket_name}/{fl}'))
-
-        im_index = len(im_dict)
-        im_dict[im_index] = im
-
-        if 'NOANNEAL' in fl:
-            #time = temp = 0
-            anl_temp = 0
-            anl_time = 0
-
-            #extract sub and dev
-            s_idx = fl.index('S')+1
-            d_idx = fl.index('D')+1
-
-            sub = fl[s_idx]
-            dev = fl[d_idx]
+        if fl[-1] == '/':
+            pass
+        
+        else:
+            byte_stream = io.BytesIO(obj.get()['Body'].read())
             
-        elif 'postexam' in fl:
-            #extract temp, time, sub, dev from filename
-            temp_stop_indx = fl.index('C')
-            anl_temp = int(fl[(temp_stop_indx - 2):temp_stop_indx])
+            im = np.load(byte_stream)
+#             plt.imshow(im[:,:,0])
+#             plt.show()
 
-            time_start_indx = temp_stop_indx+2
-            time_stop_indx = fl.index('m')
-            time_stop_indx = time_stop_indx
-            anl_time = fl[time_start_indx:time_stop_indx]
-            anl_time = int(anl_time)
+            im_index = len(im_dict)
+            im_dict[im_index] = im
 
-            sub = 4
-            dev = 6
+            if 'NOANNEAL' in fl:
+                #time = temp = 0
+                anl_temp = 0
+                anl_time = 0
 
-        elif fl[-1] != '/':
-            #extract temp, time, sub, dev from filename
-            temp_stop_indx = fl.index('C')
-            anl_temp = int(fl[(temp_stop_indx - 2):temp_stop_indx])
+                #extract sub and dev
+                s_idx = fl.index('S')+1
+                d_idx = fl.index('D')+1
 
-            time_start_indx = temp_stop_indx+2
-            time_stop_indx = fl.index('m')
-            time_stop_indx = time_stop_indx
-            anl_time = fl[time_start_indx:time_stop_indx]
-            anl_time = int(anl_time)
+                sub = fl[s_idx]
+                dev = fl[d_idx]
 
-            s_idx = fl.index('b')+1
-            d_idx = fl.index('v')+1
+            elif 'postexam' in fl:
+                #extract temp, time, sub, dev from filename
+                temp_stop_indx = fl.index('C')
+                temp_start_indx = fl.index('/') + 1
+                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
 
-            sub = fl[s_idx]
-            dev = fl[d_idx]
+                time_start_indx = temp_stop_indx+2
+                time_stop_indx = fl.index('m')
+                time_stop_indx = time_stop_indx
+                anl_time = fl[time_start_indx:time_stop_indx]
+                anl_time = int(anl_time)
 
-        #assign entry identifiers to label key
-        label_dict[i] = {'Anneal_time' : int(anl_time), 'Anneal_temp' : int(anl_temp),
-                                 'Substrate' : int(sub), 'Device': int(dev)}
+                sub = 4
+                dev = 6
+
+            elif fl[-1] != '/':
+                #extract temp, time, sub, dev from filename
+                temp_stop_indx = fl.index('C')
+                temp_start_indx = fl.index('/') + 1
+                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+
+                time_start_indx = temp_stop_indx+2
+                time_stop_indx = fl.index('m')
+                time_stop_indx = time_stop_indx
+                anl_time = fl[time_start_indx:time_stop_indx]
+                anl_time = int(anl_time)
+
+                s_idx = fl.index('b')+1
+                d_idx = fl.index('v')+1
+
+                sub = fl[s_idx]
+                dev = fl[d_idx]
+
+            #assign entry identifiers to label key
+            label_dict[i] = {'Anneal_time' : int(anl_time), 'Anneal_temp' : int(anl_temp),
+                                     'Substrate' : int(sub), 'Device': int(dev)}
         
     label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')
             
     return im_dict, label_df
 
 
-class OPV_ImDataset(Dataset):
+class OPV_ImDataset(torch.utils.data.Dataset):
     """
     This class takes in an s3 bucket name and filepath, and calls nuts.load_s3_ims
     to initialize a custom dataset class that inherets from PyTorch. 
     """
     def __init__(self,bucket_name, filepath):
+        super(OPV_ImDataset).__init__()
         self.im_dict, self.im_labels = load_s3_ims(bucket_name, filepath)
+        self.keys = self.im_labels.index
+        
 
     def __len__(self):
         return len(self.im_dict)
 
     def __getitem__(self, key):
-         
+        
         self.im_tensor = self.convert_im_to_tensors(self.im_dict[key])
-        self.label_tensor = self.convert_label_to_tensors(self.im_labels[key])
+        self.label_tensor = self.convert_label_to_tensors(self.im_labels.loc[key].tolist())
         
         return self.im_tensor, self.label_tensor
     
     def convert_im_to_tensors(self, im):
         
         im_tensor = torch.from_numpy(im).float()
-        im_tensor = im_tensors.view(2, 256, 256)
+        im_tensor = im_tensor.view(2, 256, 256)
         
         return im_tensor
         
-    def convert_label_to_tensors(label_df):
-        label_tensor =  torch.tensor(label_df.values.astype(np.float32)).float()
+    def convert_label_to_tensors(self, label_df):
+        label_tensor =  torch.tensor(label_df).float()
         
         return label_tensor
-
+    
 
 def load_trained_model(previous_model, model, optimizer):
     
