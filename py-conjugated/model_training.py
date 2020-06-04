@@ -93,7 +93,7 @@ def train_OPV_df_model(model, training_data_set, optimizer):
 
 def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+#     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     total_step = len(training_data_set)
     loss_list = []
@@ -101,8 +101,8 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     model.train()
 
     for images, labels in training_data_set:
-        images = images.to(device)
-        labels = labels.to(device)
+#         images = images.to(device)
+#         labels = labels.to(device)
         
         # Run the forward pass
         im_out, im_train_out = model(images)

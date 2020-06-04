@@ -101,7 +101,7 @@ def eval_OPV_df_model(model, testing_data_set):
 
 def eval_OPV_m2py_model(model, testing_data_set, criterion):
     
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+#     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     #evaluate the model
     model.eval()
@@ -112,8 +112,8 @@ def eval_OPV_m2py_model(model, testing_data_set, criterion):
         test_total = 0
 
         for inputs, labels in testing_data_set:
-            images = images.to(device)
-            labels = labels.to(device)
+#             images = images.to(device)
+#             labels = labels.to(device)
 
             outputs = model(inputs)
     

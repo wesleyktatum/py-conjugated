@@ -2,7 +2,7 @@ import boto3
 import torch
 import torch.nn as nn
 
-module_path = os.path.abspath(os.path.join('../py-conjugated/networks/'))
+module_path = os.path.abspath(os.path.join('./'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 import morphology_networks as net
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     ###############
 
     im_train_epoch_losses = []
-    # im_test_epoch_losses = []
+    im_test_epoch_losses = []
 
     for epoch in range(epochs):
 
@@ -64,8 +64,8 @@ if __name__ == '__main__':
 
         im_train_epoch_losses.append(im_train_epoch_loss)
 
-    #     im_test_epoch_loss = test.eval_OPV_m2py_model(model = im_branch_model,
-    #                                  testing_data_set = im_testing_data_set,
-    #                                  criterion = im_criterion)
+        im_test_epoch_loss = test.eval_OPV_m2py_model(model = im_branch_model,
+                                     testing_data_set = im_testing_data_set,
+                                     criterion = im_criterion)
 
-    #     im_test_epoch_losses.append(im_test_epoch_loss)
+        im_test_epoch_losses.append(im_test_epoch_loss)
