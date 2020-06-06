@@ -106,7 +106,7 @@ class OPV_m2py_NN(nn.Module):
         
         self.layer3 = nn.Sequential(
             nn.Dropout(),               #helps avoid over-fitting
-            nn.Linear(524288, 10000),
+            nn.Linear(238114, 10000),
             nn.Linear(10000, 5000),
             nn.Linear(5000, 1000),
             nn.Linear(1000, 100)

@@ -128,7 +128,7 @@ class OPV_ImDataset(torch.utils.data.Dataset):
     def __getitem__(self, key):
         
         self.im_tensor = self.convert_im_to_tensors(self.im_dict[key])
-        self.label_tensor = self.convert_label_to_tensors(self.im_labels.loc[key].tolist())
+        self.label_tensor = self.convert_label_to_tensors(self.im_labels.iloc[key].tolist())
         
         return self.im_tensor, self.label_tensor
     
