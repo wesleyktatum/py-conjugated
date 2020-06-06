@@ -124,6 +124,7 @@ class OPV_ImDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.im_dict)
 
+    
     def __getitem__(self, key):
         
         self.im_tensor = self.convert_im_to_tensors(self.im_dict[key])
@@ -131,12 +132,122 @@ class OPV_ImDataset(torch.utils.data.Dataset):
         
         return self.im_tensor, self.label_tensor
     
+    
     def convert_im_to_tensors(self, im):
         
         im_tensor = torch.from_numpy(im).float()
         im_tensor = im_tensor.view(2, 256, 256)
         
         return im_tensor
+        
+        
+    def convert_label_to_tensors(self, label_df):
+        label_tensor =  torch.tensor(label_df).float()
+        
+        return label_tensor
+    
+    
+class local_OPV_ImDataset(torch.utils.data.Dataset):
+    """
+    This class takes in a filepath pointing to a directory of images and labels,
+    and loads them into a custom dataset class that inherets from PyTorch. 
+    """
+    def __init__(self, filepath):
+        super(local_OPV_ImDataset).__init__()
+        
+        files = os.listdir(filepath)
+        
+        self.im_dict = {}
+        label_dict = {}
+        for i, fl in enumerate(files):
+#             print(fl)
+            anl_temp = 0
+            anl_time = 0
+            sub = 0
+            dev = 0
+
+            if fl[-1] == '/':
+                pass
+            elif fl[-1] == 'e':
+                pass
+
+            else:
+                im = np.load(filepath+fl)
+
+                im_index = len(self.im_dict)
+                self.im_dict[im_index] = im
+
+                if 'NOANNEAL' in fl:
+                    #time = temp = 0
+                    anl_temp = 0
+                    anl_time = 0
+
+                    #extract sub and dev
+                    s_idx = fl.index('S')+1
+                    d_idx = fl.index('D')+1
+
+                    sub = fl[s_idx]
+                    dev = fl[d_idx]
+
+                elif 'postexam' in fl:
+                    #extract temp, time, sub, dev from filename
+                    temp_stop_indx = fl.index('C')
+                    temp_start_indx = 0
+                    anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+
+                    time_start_indx = temp_stop_indx+2
+                    time_stop_indx = fl.index('m')
+                    time_stop_indx = time_stop_indx
+                    anl_time = fl[time_start_indx:time_stop_indx]
+                    anl_time = int(anl_time)
+
+                    sub = 4
+                    dev = 6
+
+                elif fl[-1] != '/':
+                    #extract temp, time, sub, dev from filename
+                    temp_stop_indx = fl.index('C')
+                    temp_start_indx = 0
+                    anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+
+                    time_start_indx = temp_stop_indx+2
+                    time_stop_indx = fl.index('m')
+                    time_stop_indx = time_stop_indx
+                    anl_time = fl[time_start_indx:time_stop_indx]
+                    anl_time = int(anl_time)
+
+                    s_idx = fl.index('b')+1
+                    d_idx = fl.index('v')+1
+
+                    sub = fl[s_idx]
+                    dev = fl[d_idx]
+
+                #assign entry identifiers to label key
+                label_dict[i] = {'Anneal_time' : int(anl_time), 'Anneal_temp' : int(anl_temp),
+                                         'Substrate' : int(sub), 'Device': int(dev)}
+
+        self.im_labels = pd.DataFrame.from_dict(label_dict, orient = 'index')
+        
+        
+    def __len__(self):
+        return len(self.im_dict)
+
+    
+    def __getitem__(self, key):
+        
+        self.im_tensor = self.convert_im_to_tensors(self.im_dict[key])
+        self.label_tensor = self.convert_label_to_tensors(self.im_labels.iloc[key].tolist())
+        
+        return self.im_tensor, self.label_tensor
+    
+    
+    def convert_im_to_tensors(self, im):
+        
+        im_tensor = torch.from_numpy(im).float()
+        im_tensor = im_tensor.view(2, 256, 256)
+        
+        return im_tensor
+        
         
     def convert_label_to_tensors(self, label_df):
         label_tensor =  torch.tensor(label_df).float()
