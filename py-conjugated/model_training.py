@@ -103,13 +103,17 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     for images, labels in training_data_set:
 #         images = images.to(device)
 #         labels = labels.to(device)
+        labels = labels[:2]
         
         # Run the forward pass
-        im_out, im_train_out = model(images)
+        im_pred, im_enc = model(images)
+        im_pred = im_pred.squeeze()
         optimizer.zero_grad()
+        print(f'predictions: {im_pred}')
+        print(f'labels: {labels}')
         
         # Gather the loss
-        loss = criterion(outputs, labels)
+        loss = criterion(im_pred, labels)
         loss_list.append(loss.item())
 
         # backprop and perform Adam optimization

@@ -3,6 +3,7 @@ This modules contains utility functions for data manipulation and plotting of
 results and data
 """
 
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -244,7 +245,7 @@ class local_OPV_ImDataset(torch.utils.data.Dataset):
     def convert_im_to_tensors(self, im):
         
         im_tensor = torch.from_numpy(im).float()
-        im_tensor = im_tensor.view(2, 256, 256)
+        im_tensor = im_tensor.view(1, 2, 256, 256)
         
         return im_tensor
         
@@ -331,6 +332,21 @@ def df_Gaussian_normalize(dataframe):
         norm_key[colname] = [mean, stdev]
         
     return normed_df, norm_key
+
+
+def df_Gaussian_denormalize(normed_df, norm_key):
+    
+    denormed_df = pd.DataFrame()
+    
+    for colname, coldata in normed_df.iteritems():
+        mean = norm_key[colname][0]
+        std = norm_key[colname][1]
+        
+        denormed_col = (coldata * mean) + std
+        
+        denormed_df[colname] = denormed_col
+        
+    return denormed_df
 
 
 def normed_areas(dataframe):

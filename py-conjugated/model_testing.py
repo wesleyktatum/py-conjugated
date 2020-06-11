@@ -99,7 +99,7 @@ def eval_OPV_df_model(model, testing_data_set):
     return test_epoch_loss, pce_test_epoch_loss, voc_test_epoch_loss, jsc_test_epoch_loss, ff_test_epoch_loss, pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc
 
 
-def eval_OPV_m2py_model(model, testing_data_set, criterion):
+def eval_OPV_m2py_model(model, testing_dataset, criterion):
     
 #     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
@@ -111,14 +111,16 @@ def eval_OPV_m2py_model(model, testing_data_set, criterion):
         test_losses = []
         test_total = 0
 
-        for inputs, labels in testing_data_set:
+        for images, labels in testing_dataset:
 #             images = images.to(device)
 #             labels = labels.to(device)
+            labels = labels[:2]
 
-            outputs = model(inputs)
+            im_pred, im_enc = model(images)
+            im_pred = im_pred.squeeze()
     
             # calculate loss per batch of testing data
-            test_loss = criterion(outputs, labels)
+            test_loss = criterion(im_pred, labels)
             test_losses.append(test_loss.item())
             test_total += 1
 

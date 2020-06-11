@@ -107,7 +107,7 @@ class OPV_m2py_NN(nn.Module):
         self.layer3 = nn.Sequential(
             nn.Conv2d(64, 128, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 2, stride = 2)
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
             nn.Flatten()
         )
         
@@ -120,17 +120,17 @@ class OPV_m2py_NN(nn.Module):
         
         self.out_layer = nn.Linear(100, 2) #predicting anneal time and temp
             
-    def forward(self, x_im):
-        im_out = self.layer1(x_im)
-        im_out = self.layer2(im_out)
-        im_out = self.layer3(im_out)
+    def forward(self, im):
+        im_encoding = self.layer1(im)
+        im_encoding = self.layer2(im_encoding)
+        im_encoding = self.layer3(im_encoding)
         
 #         im_out = im_out.view(-1,5000) #reshape output for linear layers
         
-        im_out = self.layer4(im_out)
-        im_train_out = self.out_layer(im_out)
+        im_encoding = self.layer4(im_encoding)
+        im_prediction = self.out_layer(im_encoding)
         
-        return im_out, im_train_out
+        return im_prediction, im_encoding
     
     
     #define the neural network
