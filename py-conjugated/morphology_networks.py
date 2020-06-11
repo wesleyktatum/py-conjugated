@@ -108,6 +108,7 @@ class OPV_m2py_NN(nn.Module):
             nn.Conv2d(64, 128, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size = 2, stride = 2)
+            nn.Flatten()
         )
         
         self.layer4 = nn.Sequential(
@@ -124,7 +125,7 @@ class OPV_m2py_NN(nn.Module):
         im_out = self.layer2(im_out)
         im_out = self.layer3(im_out)
         
-        im_out = im_out.view(-1,1) #reshape output for linear layers
+#         im_out = im_out.view(-1,5000) #reshape output for linear layers
         
         im_out = self.layer4(im_out)
         im_train_out = self.out_layer(im_out)

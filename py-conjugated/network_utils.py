@@ -333,6 +333,49 @@ def df_Gaussian_normalize(dataframe):
     return normed_df, norm_key
 
 
+def normed_areas(dataframe):
+    """
+    Takes in morphology descriptors dataframe and calculates a normalized area covered
+    by each of the present phases
+    """    
+    phases = dataframe['GMM_label'].unique()
+    
+    areas = []
+    
+    for phase in phases:
+        
+        phase_rows = dataframe[dataframe['GMM_label'] == phase]
+        total_area = phase_rows['area'].sum()
+        areas.append(total_area)
+        
+    normed_areas = areas/max(areas)
+    
+    return normed_areas
+
+
+def relative_areas(dataframe):
+    """
+    Takes in morphology descriptors dataframe and calculates a normalized relative ratios
+    of the areas covered by each of the present phases
+    """    
+    phases = dataframe['GMM_label'].unique()
+    
+    areas = []
+    
+    total_area = 0
+
+    for phase in phases:
+        
+        phase_rows = dataframe[dataframe['GMM_label'] == phase]
+        phase_area = phase_rows['area'].sum()
+        areas.append(phase_area)
+        total_area+=phase_area
+        
+    relative_areas = areas/total_area
+    
+    return relative_areas
+
+
 #######################################################
 #                  Network Model Utilities
 #######################################################
