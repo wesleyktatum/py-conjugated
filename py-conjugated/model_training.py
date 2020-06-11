@@ -109,7 +109,7 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         optimizer.zero_grad()
         
         # Gather the loss
-        loss = criterion(outputs, labels)
+        loss = criterion(im_train_out, labels)
         loss_list.append(loss.item())
 
         # backprop and perform Adam optimization
