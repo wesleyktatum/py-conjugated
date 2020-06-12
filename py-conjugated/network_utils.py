@@ -143,7 +143,7 @@ class OPV_ImDataset(torch.utils.data.Dataset):
         
         
     def convert_label_to_tensors(self, label_df):
-        label_tensor =  torch.tensor(label_df).float()
+        label_tensor =  torch.tensor(label_df[:2]).float()
         
         return label_tensor
     

@@ -99,25 +99,29 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     loss_list = []
     
     model.train()
-
+    
+    batch_iterator = 0
     for images, labels in training_data_set:
+        batch_iterator+=1
+        print(f'image # {batch_iterator}')
 #         images = images.to(device)
 #         labels = labels.to(device)
-        labels = labels[:2]
         
         # Run the forward pass
         im_pred, im_enc = model(images)
+        
+        #drop superfluous dimensions (e.g. batch)
+        im_labels = labels.squeeze()
         im_pred = im_pred.squeeze()
+        
+#         print(f'predictions: {im_pred}')
+#         print(f'labels: {im_labels}')
+        
         optimizer.zero_grad()
-        print(f'predictions: {im_pred}')
-        print(f'labels: {labels}')
+
         
         # Gather the loss
-<<<<<<< HEAD
-        loss = criterion(im_pred, labels)
-=======
-        loss = criterion(im_train_out, labels)
->>>>>>> 58ee091f1cceb11ba2aa223cba795ac7c14f5502
+        loss = criterion(im_pred, im_labels)
         loss_list.append(loss.item())
 
         # backprop and perform Adam optimization
@@ -127,7 +131,7 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     total = len(loss_list)
     epoch_loss = sum(loss_list)/total
     
-    return model, epoch_loss
+    return epoch_loss
 
 
 def train_OFET_df_model(model, training_data_set, optimizer):

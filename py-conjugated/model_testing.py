@@ -126,7 +126,7 @@ def eval_OPV_m2py_model(model, testing_dataset, criterion):
 
         total_test_loss = sum(test_losses)/test_total
 
-        print (f"Total testing loss is: {total_test_loss}")
+#         print (f"Total testing loss is: {total_test_loss}")
     return total_test_loss
 
 
