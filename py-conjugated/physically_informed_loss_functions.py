@@ -160,3 +160,51 @@ class MAPE(nn.Module):
         return mape
     
     
+class reg_MAPE():
+    """
+    Simple class to interate through pytorch tensors of predictions and ground-tuths to 
+    calculate the Mean Absolute Percent Error (MAPE).
+    """
+    
+    def __init__(self):
+        super (reg_MAPE, self).__init__()
+        
+    def forward(self, predictions, labels):
+        
+        absolute_percent_error_list = []
+        count = 0
+        self.zero_MAPE = 0
+
+        for x, y in zip(predictions, labels):
+            count += 1
+                    
+            if y == 0.0:
+                error = x
+                y = x * 0.01
+                ae =np.abs(error)
+                ape = ae/y
+                    
+                self.zero_MAPE += 1
+                    
+            else:
+                error = x - y
+                ae = np.abs(error)
+                ape = ae / y
+                    
+
+            absolute_percent_error_list.append(ape)
+
+            mape = 0
+        for el in absolute_percent_error_list:
+            
+            if el == np.float("inf"):
+                pass
+            else:
+                mape += el
+                     
+        mape = mape / count
+        mape = mape * 100
+
+        
+        return mape
+    
