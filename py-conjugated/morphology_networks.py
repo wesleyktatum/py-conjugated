@@ -17,60 +17,49 @@ class OPV_df_NN(nn.Module):
         
         #emedding layer
         self.em_layer = nn.Sequential(
-            nn.Linear(in_dims, 16),
-            nn.ReLU()
-        )
-        
-        #hidden layers
-        self.h_layers = nn.Sequential(
-            nn.Linear(16, 32),
+            nn.Linear(in_dims, 1000),
             nn.ReLU(),
-            nn.Linear(32, 16),
+            nn.Linear(1000, 500),
             nn.ReLU(),
-            nn.Linear(16, 8),
-            nn.ReLU()
         )
         
         #output layers
         self.PCE_branch = nn.Sequential(
             nn.Dropout(p = 0.1),
-            nn.Linear(8, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(500, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(16, 1),
             nn.ReLU()
         )
         self.Voc_branch = nn.Sequential(
             nn.Dropout(p = 0.1),
-            nn.Linear(8, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(500, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(16, 1),
             nn.ReLU()
         )
         self.Jsc_branch = nn.Sequential(
             nn.Dropout(p = 0.1),
-            nn.Linear(8, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(500, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(16, 1),
             nn.ReLU()
         )
         self.FF_branch = nn.Sequential(
             nn.Dropout(p = 0.1),
-            nn.Linear(8, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(500, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(16, 1),
             nn.ReLU()
         )
         
     def forward(self, x):
         #data enters embedding layer
         out = self.em_layer(x)
-        
-        #embedded data is passed to hidden layers
-        out = self.h_layers(out)
         
         #embedded data is passed to output layer
         PCE_out = self.PCE_branch(out)

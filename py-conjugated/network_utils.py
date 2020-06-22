@@ -267,14 +267,11 @@ def load_trained_model(previous_model, model, optimizer):
     return model, optimizer
 
 
-def save_trained_model(save_path, epoch, model, optimizer, train_loss, test_loss):
+def save_trained_model(save_path, epoch, model, optimizer):
     save_dict = {
         'epoch': epoch,
         'state_dict': model.state_dict(),
-#         'train_losses': train_loss
-#         'test_losses': [pce_test_loss, voc_test_loss,
-#                        jsc_test_loss, ff_test_loss]
-        'optimizer': optimizer.state_dict()
+        'optimizer': optimizer.state_dict(),
         }
         
     torch.save(save_dict, save_path)
@@ -401,8 +398,9 @@ def init_weights(model):
         torch.nn.init.xavier_uniform_(model.weight)
         model.bias.data.fill_(0.01)
         
-#     if type(model) == nn.BatchNorm1d:
-#         model.reset_parameters()
+    if type(model) == torch.nn.Conv2d:
+        torch.nn.init.xavier_uniform_(model.weight)
+        model.bias.data.fill_(0.01)
 
     
 

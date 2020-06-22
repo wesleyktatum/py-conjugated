@@ -208,3 +208,39 @@ class reg_MAPE():
         
         return mape
     
+    
+    class MAE(nn.Module):
+    """
+    Simple class to interate through pytorch tensors of predictions and ground-tuths to calculate 
+    the Mean Absolute Error (MAE).
+    """
+    
+    def __init__(self):
+        super (MAPE, self).__init__()
+        
+    def forward(self, predictions, labels):
+        with torch.no_grad():
+        
+            absolute_error_list = []
+            count = 0
+
+            for x, y in zip(predictions, labels):
+                count += 1
+                
+                error = torch.add(x, torch.neg(y))
+                ae =torch.abs(error)
+
+                absolute_error_list.append(ae.item())
+
+            mae = 0
+            for el in absolute_error_list:
+                if el == torch.tensor(np.float("inf")):
+                    pass
+                else:
+                    mae += el
+                    
+            mae = mae / count
+            mae = mae * 100
+
+        
+        return mae
