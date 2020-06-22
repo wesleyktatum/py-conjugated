@@ -209,7 +209,7 @@ class reg_MAPE():
         return mape
     
     
-    class MAE(nn.Module):
+class MAE(nn.Module):
     """
     Simple class to interate through pytorch tensors of predictions and ground-tuths to calculate 
     the Mean Absolute Error (MAE).
