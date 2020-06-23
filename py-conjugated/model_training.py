@@ -37,15 +37,15 @@ def train_OPV_df_model(model, training_data_set, optimizer):
     model.train()
     
     #Define boundaries for physical solutions
-    pce_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
-    voc_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
-    jsc_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
-    ff_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
+#     pce_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
+#     voc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
+#     jsc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
+#     ff_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
 
-#     pce_criterion = nn.MSELoss()
-#     voc_criterion = nn.MSELoss()
-#     jsc_criterion = nn.MSELoss()
-#     ff_criterion = nn.MSELoss()
+    pce_criterion = nn.MSELoss()
+    voc_criterion = nn.MSELoss()
+    jsc_criterion = nn.MSELoss()
+    ff_criterion = nn.MSELoss()
     
     for train_data, pce_labels, voc_labels, jsc_labels, ff_labels in training_data_set:
         

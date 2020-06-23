@@ -23,10 +23,15 @@ def eval_OPV_df_model(model, testing_data_set):
     #evaluate the model
     model.eval()
     
-    pce_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
-    voc_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
-    jsc_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
-    ff_criterion = PhysLoss.ThresholdedMSELoss(lower = -5, upper = 1.5)
+#     pce_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
+#     voc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
+#     jsc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
+#     ff_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
+    
+    pce_criterion = nn.MSELoss()
+    voc_criterion = nn.MSELoss()
+    jsc_criterion = nn.MSELoss()
+    ff_criterion = nn.MSELoss()
     
     accuracy = PhysLoss.MAPE()
 
