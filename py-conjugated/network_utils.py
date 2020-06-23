@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 import torch
 import boto3
-from s3fs.core import S3FileSystem
 import io
 from torch.utils.data import Dataset
 

@@ -1,5 +1,7 @@
+import os
+import sys
 import logging
-
+import argparse
 import boto3
 import torch
 import torch.nn as nn
@@ -18,13 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
-############
-# Get the Data
-############
-
-
-if __name__ == '__main__':
-    
+def train_test_cycle(lr, epochs, trracker = None):
     bucket_name = 'sagemaker-us-east-2-362637960691'
     train_data_location = 'py-conjugated/m2py_labels/OPV_labels/train_set/'
     test_data_location = 'py-conjugated/m2py_labels/OPV_labels/test_set/'
@@ -54,14 +50,13 @@ if __name__ == '__main__':
     im_criterion = nn.CrossEntropyLoss()
     im_optimizer = torch.optim.Adam(im_branch_model.parameters(), lr = lr)
 
-    ###############
-    #Train the model
-    ###############
-
     im_train_epoch_losses = []
     im_test_epoch_losses = []
 
     for epoch in range(epochs):
+        ###############
+        #Train the model
+        ###############
 
         im_train_epoch_loss = train.train_OPV_m2py_model(model = im_branch_model,
                                        training_data_set = im_training_data_set,
@@ -73,18 +68,23 @@ if __name__ == '__main__':
         im_test_epoch_loss = test.eval_OPV_m2py_model(model = im_branch_model,
                                      testing_data_set = im_testing_data_set,
                                      criterion = im_criterion)
+        
+        ###############
+        #Test the model
+        ###############
 
         im_test_epoch_losses.append(im_test_epoch_loss)
+        logger.debug(f'Test MSE = {im_test_epoch_loss}')
         
-        logger.info(f'Test MSE: {im_test_epoch_loss}')
-        
-    epochs = np.arange(1, (num_epochs+1), 1)
+    epochs = np.arange(1, (args.epochs+1), 1)
 
     nuts.plot_OPV_df_loss(epochs, train_epoch_losses, test_epoch_losses,
                          pce_train_epoch_losses, pce_test_epoch_losses,
                          voc_train_epoch_losses, voc_test_epoch_losses,
                          jsc_train_epoch_losses, jsc_test_epoch_losses,
                          ff_train_epoch_losses, ff_test_epoch_losses)
+    
+    
 
     nuts.plot_OPV_df_accuracies(epochs, pce_test_epoch_accuracies, voc_test_epoch_accuracies, 
                                jsc_test_epoch_accuracies, ff_test_epoch_accuracies)
@@ -127,3 +127,22 @@ if __name__ == '__main__':
     ff_mape = mape.forward(FF_out, ff_labels)
 
     print(f'mse = {ff_mse}, mape = {ff_mape}, r2 = {ff_r2}')
+
+############
+# Get the Data
+############
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--lr', type=float, default=0.001)
+    
+    return parser.parse_args
+
+if __name__ == '__main__':
+    args = parse_args()
+
+    train(args.lr, args.epochs)
+
+    
