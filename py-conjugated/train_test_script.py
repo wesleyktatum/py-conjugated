@@ -1,6 +1,5 @@
 import os
 import sys
-import logging
 import argparse
 import boto3
 import torch
@@ -15,10 +14,6 @@ import model_testing as test
 import physically_informed_loss_functions as pilf
 import network_utils as nuts
 
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler(sys.stdout))
 
 def train_test_cycle(args, tracker = None):
     bucket_name = 'sagemaker-us-east-2-362637960691'
@@ -78,7 +73,7 @@ def train_test_cycle(args, tracker = None):
         ###############
 
         im_test_epoch_losses.append(im_test_epoch_loss)
-        logger.debug(f'Test MSE = {im_test_epoch_loss}')
+        print('Test MSE = {}'.format(im_test_epoch_loss))
         
     
         
@@ -116,25 +111,25 @@ def train_test_cycle(args, tracker = None):
     pce_r2 = r2_score(PCE_out, pce_labels)
     pce_mape = mape.forward(PCE_out, pce_labels)
 
-    print(f'mse = {pce_mse}, mape = {pce_mape}, r2 = {pce_r2}')
+    print('PCE: mse = {}, mape = {}, r2 = {}'.format(pce_mse, pce_mape, pce_r2))
 
     voc_mse = mean_squared_error(Voc_out, voc_labels)
     voc_r2 = r2_score(Voc_out, voc_labels)
     voc_mape = mape.forward(Voc_out, voc_labels)
 
-    print(f'mse = {voc_mse}, mape = {voc_mape}, r2 = {voc_r2}')
+    print('Voc: mse = {}, mape = {}, r2 = {}'.format(voc_mse, voc_mape, voc_r2))
 
     jsc_mse = mean_squared_error(Jsc_out, jsc_labels)
     jsc_r2 = r2_score(Jsc_out, jsc_labels)
     jsc_mape = mape.forward(Jsc_out, jsc_labels)
 
-    print(f'mse = {jsc_mse}, mape = {jsc_mape}, r2 = {jsc_r2}')
+    print('Jsc: mse = {}, mape = {}, r2 = {}'.format(jsc_mse, jsc_mape, jsc_r2))
 
     ff_mse = mean_squared_error(FF_out, ff_labels)
     ff_r2 = r2_score(FF_out, ff_labels)
     ff_mape = mape.forward(FF_out, ff_labels)
 
-    print(f'mse = {ff_mse}, mape = {ff_mape}, r2 = {ff_r2}')
+    print('FF: mse = {}, mape = {}, r2 = {}'.format(ff_mse, ff_mape, ff_r2))
 
 
 def parse_args():
