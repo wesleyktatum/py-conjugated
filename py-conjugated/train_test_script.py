@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 import torch
 import torch.nn as nn
@@ -8,9 +10,13 @@ if module_path not in sys.path:
 import morphology_networks as net
 import model_training as train
 import model_testing as test
-import physically_informed_loss_functions as PhysLoss
+import physically_informed_loss_functions as pilf
 import network_utils as nuts
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 ############
 # Get the Data
@@ -69,3 +75,55 @@ if __name__ == '__main__':
                                      criterion = im_criterion)
 
         im_test_epoch_losses.append(im_test_epoch_loss)
+        
+        logger.info(f'Test MSE: {im_test_epoch_loss}')
+        
+    epochs = np.arange(1, (num_epochs+1), 1)
+
+    nuts.plot_OPV_df_loss(epochs, train_epoch_losses, test_epoch_losses,
+                         pce_train_epoch_losses, pce_test_epoch_losses,
+                         voc_train_epoch_losses, voc_test_epoch_losses,
+                         jsc_train_epoch_losses, jsc_test_epoch_losses,
+                         ff_train_epoch_losses, ff_test_epoch_losses)
+
+    nuts.plot_OPV_df_accuracies(epochs, pce_test_epoch_accuracies, voc_test_epoch_accuracies, 
+                               jsc_test_epoch_accuracies, ff_test_epoch_accuracies)
+    
+    im_branch_model.eval()
+
+    with torch.no_grad():
+        for inputs, pce_labels, voc_labels, jsc_labels, ff_labels in testing_data_set:
+            inputs = inputs.to(device)
+            pce_labels = pce_labels.to(device)
+            voc_labels = voc_labels.to(device)
+            jsc_labels = jsc_labels.to(device)
+            ff_labels = ff_labels.to(device)
+
+            PCE_out, Voc_out, Jsc_out, FF_out = im_branch_model(inputs)
+
+
+    mape = pilf.reg_MAPE()
+
+    pce_mse = mean_squared_error(PCE_out, pce_labels)
+    pce_r2 = r2_score(PCE_out, pce_labels)
+    pce_mape = mape.forward(PCE_out, pce_labels)
+
+    print(f'mse = {pce_mse}, mape = {pce_mape}, r2 = {pce_r2}')
+
+    voc_mse = mean_squared_error(Voc_out, voc_labels)
+    voc_r2 = r2_score(Voc_out, voc_labels)
+    voc_mape = mape.forward(Voc_out, voc_labels)
+
+    print(f'mse = {voc_mse}, mape = {voc_mape}, r2 = {voc_r2}')
+
+    jsc_mse = mean_squared_error(Jsc_out, jsc_labels)
+    jsc_r2 = r2_score(Jsc_out, jsc_labels)
+    jsc_mape = mape.forward(Jsc_out, jsc_labels)
+
+    print(f'mse = {jsc_mse}, mape = {jsc_mape}, r2 = {jsc_r2}')
+
+    ff_mse = mean_squared_error(FF_out, ff_labels)
+    ff_r2 = r2_score(FF_out, ff_labels)
+    ff_mape = mape.forward(FF_out, ff_labels)
+
+    print(f'mse = {ff_mse}, mape = {ff_mape}, r2 = {ff_r2}')
