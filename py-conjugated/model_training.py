@@ -9,6 +9,7 @@ import sys
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 module_path = os.path.abspath(os.path.join('./'))
 if module_path not in sys.path:
@@ -96,7 +97,8 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
 #     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     total_step = len(training_data_set)
-    loss_list = []
+    time_loss_list = []
+    temp_loss_list = []
     
     model.train()
     
@@ -108,30 +110,63 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
 #         labels = labels.to(device)
         
         # Run the forward pass
+                
+        optimizer.zero_grad()
         im_pred, im_enc = model(images)
+        print(im_pred.size())
+        print(im_pred)
+        print(labels.size())
+        
+        
+        time_pred = im_pred[:,0]
+        temp_pred = im_pred[:,1]
+        time_label = labels[:,0]
+        temp_label = labels[:,1]
+        
+        print("pre")
+        print(time_pred.size())
+        print(time_label.size())
+        print(temp_pred.size())
+        print(temp_label.size())
         
         #drop superfluous dimensions (e.g. batch)
-        im_labels = labels.squeeze()
-        im_pred = im_pred.squeeze()
+        time_pred = time_pred.view(-1)
+        temp_pred = temp_pred.view(-1)
+        time_label = time_label.view(-1)
+        temp_label = temp_label.view(-1)
         
-#         print(f'predictions: {im_pred}')
-#         print(f'labels: {im_labels}')
+        print("post")
+        print(time_pred.size())
+        print(time_label.size())
+        print(temp_pred.size())
+        print(temp_label.size())
         
-        optimizer.zero_grad()
-
+        #Gather the loss
+        time_loss_func = nn.MSELoss()
+        temp_loss_func = nn.MSELoss()
+        time_loss = time_loss_func(time_pred, time_label)
+        temp_loss = temp_loss_func(temp_pred, temp_label)
+        print("loss calculated")
         
-        # Gather the loss
-        loss = criterion(im_pred, im_labels)
-        loss_list.append(loss.item())
-
+        time_loss_list.append(time_loss.item())
+        temp_loss_list.append(temp_loss.item())
+        
+        
+#         loss = F.nll_loss(im_pred, labels)
+#         loss_list.append(loss.item())
+        
         # backprop and perform Adam optimization
-        torch.autograd.backward(loss)
+        torch.autograd.backward(time_loss, temp_loss)
+        print("backprop calculated")
+#         torch.autograd.backward(loss)
         optimizer.step()
+        print("end of loop {}".format(epoch))
     
-    total = len(loss_list)
-    epoch_loss = sum(loss_list)/total
+    total_count = len(loss_list)
+    time_epoch_loss = sum(time_loss_list)/total_count
+    temp_epoch_loss = sum(test_loss_list)/total_count
     
-    return epoch_loss
+    return time_epoch_loss, temp_epoch_loss
 
 
 def train_OFET_df_model(model, training_data_set, optimizer):
