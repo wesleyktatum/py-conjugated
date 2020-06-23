@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
-def train_test_cycle(lr, epochs, trracker = None):
+def train_test_cycle(args, tracker = None):
     bucket_name = 'sagemaker-us-east-2-362637960691'
     train_data_location = 'py-conjugated/m2py_labels/OPV_labels/train_set/'
     test_data_location = 'py-conjugated/m2py_labels/OPV_labels/test_set/'
@@ -29,6 +29,10 @@ def train_test_cycle(lr, epochs, trracker = None):
     client = boto3.client('s3')
     resource = boto3.resource('s3')
     s3_bucket = resource.Bucket(bucket_name)
+    
+    ############
+    # Get the Data
+    ############
 
     train_data = nuts.OPV_ImDataset(bucket_name, train_data_location)
     test_data = nuts.OPV_ImDataset(bucket_name, test_data_location)
@@ -48,12 +52,12 @@ def train_test_cycle(lr, epochs, trracker = None):
 
     #define the loss function and the optimizer
     im_criterion = nn.CrossEntropyLoss()
-    im_optimizer = torch.optim.Adam(im_branch_model.parameters(), lr = lr)
+    im_optimizer = torch.optim.Adam(im_branch_model.parameters(), lr = args.lr)
 
     im_train_epoch_losses = []
     im_test_epoch_losses = []
 
-    for epoch in range(epochs):
+    for epoch in range(args.epochs):
         ###############
         #Train the model
         ###############
@@ -76,6 +80,8 @@ def train_test_cycle(lr, epochs, trracker = None):
         im_test_epoch_losses.append(im_test_epoch_loss)
         logger.debug(f'Test MSE = {im_test_epoch_loss}')
         
+    
+        
     epochs = np.arange(1, (args.epochs+1), 1)
 
     nuts.plot_OPV_df_loss(epochs, train_epoch_losses, test_epoch_losses,
@@ -84,7 +90,9 @@ def train_test_cycle(lr, epochs, trracker = None):
                          jsc_train_epoch_losses, jsc_test_epoch_losses,
                          ff_train_epoch_losses, ff_test_epoch_losses)
     
-    
+    ###############
+    #Evaluate the results
+    ###############
 
     nuts.plot_OPV_df_accuracies(epochs, pce_test_epoch_accuracies, voc_test_epoch_accuracies, 
                                jsc_test_epoch_accuracies, ff_test_epoch_accuracies)
@@ -128,9 +136,6 @@ def train_test_cycle(lr, epochs, trracker = None):
 
     print(f'mse = {ff_mse}, mape = {ff_mape}, r2 = {ff_r2}')
 
-############
-# Get the Data
-############
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -140,9 +145,10 @@ def parse_args():
     
     return parser.parse_args
 
+
 if __name__ == '__main__':
     args = parse_args()
 
-    train(args.lr, args.epochs)
+    train(args)
 
     
