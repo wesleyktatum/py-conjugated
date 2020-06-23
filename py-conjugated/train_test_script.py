@@ -48,7 +48,7 @@ def train_test_cycle(args, tracker = None):
     epochs = args.epochs
 
     #define the loss function and the optimizer
-    im_criterion = nn.CrossEntropyLoss()
+    im_criterion = nn.MSELoss()
     im_optimizer = torch.optim.Adam(im_branch_model.parameters(), lr = lr)
 
     time_epoch_losses_train = []
@@ -85,9 +85,9 @@ def train_test_cycle(args, tracker = None):
         total_epoch_loss = time_epoch_loss_test + temp_epoch_loss_test
         total_epoch_losses.append(total_epoch_loss)
         
-        print('Test - Time MSE = {}'.format(time_epoch_loss_test))
-        print('Test - Temp MSE = {}'.format(temp_test_epoch_loss_test))
-        print('Test - Total MSE = {}'.format(total_epoch_loss))
+        print('Test - Time MSE = {};'.format(time_epoch_loss_test))
+        print('Test - Temp MSE = {};'.format(temp_epoch_loss_test))
+        print('Test - Total MSE = {};'.format(total_epoch_loss))
         
     
         
@@ -144,12 +144,12 @@ def train_test_cycle(args, tracker = None):
     ff_mape = mape.forward(FF_out, ff_labels)
 
     print('FF: mse = {}, mape = {}, r2 = {}'.format(ff_mse, ff_mape, ff_r2))
-
-
-def parse_args():
     
+    total_MAPE = pce_mape + voc_mape + jsc_mape + ff_mape
+    total_r2 = pce_r2 + voc_r2 + jsc_r2 + ff_r2
     
-    return 
+    print('Test - Total MAPE = {};'.format(total_MAPE))
+    print('Test - Total r2 = {};'.format(total_r2))
 
 
 if __name__ == '__main__':
