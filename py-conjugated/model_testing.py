@@ -119,20 +119,49 @@ def eval_OPV_m2py_model(model, testing_dataset, criterion):
         for images, labels in testing_dataset:
 #             images = images.to(device)
 #             labels = labels.to(device)
-            labels = labels[:2]
+            
 
             im_pred, im_enc = model(images)
-            im_pred = im_pred.squeeze()
+#             im_pred = im_pred.squeeze()
     
-            # calculate loss per batch of testing data
-            test_loss = criterion(im_pred, labels)
-            test_losses.append(test_loss.item())
+            time_pred = im_pred[:,0]
+            temp_pred = im_pred[:,1]
+            time_label = labels[:,0]
+            temp_label = labels[:,1]
+
+            print("pre")
+            print(time_pred.size())
+            print(time_label.size())
+            print(temp_pred.size())
+            print(temp_label.size())
+
+            #drop superfluous dimensions (e.g. batch)
+            time_pred = time_pred.view(-1)
+            temp_pred = temp_pred.view(-1)
+            time_label = time_label.view(-1)
+            temp_label = temp_label.view(-1)
+
+            print("post")
+            print(time_pred.size())
+            print(time_label.size())
+            print(temp_pred.size())
+            print(temp_label.size())
+
+            #Gather the loss
+            loss = nn.MSELoss()
+            time_loss = loss(time_pred, time_label)
+            temp_loss = loss(temp_pred, temp_label)
+            
+            time_loss_list.append(time_loss.item())
+            temp_loss_list.append(temp_loss.item())
+            
             test_total += 1
 
-        total_test_loss = sum(test_losses)/test_total
+        time_epoch_loss = sum(time_loss_list)/test_total
+        temp_epoch_loss = sum(temp_loss_list)/test_total
 
 #         print (f"Total testing loss is: {total_test_loss}")
-    return total_test_loss
+    return time_epoch_loss, temp_epoch_loss
 
 
 def eval_OFET_df_model(model, testing_data_set):

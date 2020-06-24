@@ -38,46 +38,60 @@ def train_test_cycle(args, tracker = None):
     test_data_set = torch.utils.data.DataLoader(dataset = test_data,
                                                 batch_size = len(test_data),
                                                 shuffle = True)
-
     ##############
     #Define the model
     ##############
 
     im_branch_model = net.OPV_m2py_NN(2)
+    
+    lr = args.lr
+    epochs = args.epochs
 
     #define the loss function and the optimizer
-    im_criterion = nn.CrossEntropyLoss()
-    im_optimizer = torch.optim.Adam(im_branch_model.parameters(), lr = args.lr)
+    im_criterion = nn.MSELoss()
+    im_optimizer = torch.optim.Adam(im_branch_model.parameters(), lr = lr)
 
-    im_train_epoch_losses = []
-    im_test_epoch_losses = []
+    time_epoch_losses_train = []
+    temp_epoch_losses_train = []
+    time_epoch_losses_test = []
+    temp_epoch_losses_test = []
+    total_epoch_losses = []
 
-    for epoch in range(args.epochs):
+    for epoch in range(epochs):
         ###############
         #Train the model
         ###############
 
-        im_train_epoch_loss = train.train_OPV_m2py_model(model = im_branch_model,
-                                       training_data_set = im_training_data_set,
-                                       criterion = im_criterion,
-                                       optimizer = im_optimizer)
+        time_epoch_loss_train, temp_epoch_loss_train = train.train_OPV_m2py_model(model = im_branch_model,
+                                                                                  training_data_set = train_data_set,
+                                                                                  criterion = im_criterion,
+                                                                                  optimizer = im_optimizer)
 
-        im_train_epoch_losses.append(im_train_epoch_loss)
-
-        im_test_epoch_loss = test.eval_OPV_m2py_model(model = im_branch_model,
-                                     testing_data_set = im_testing_data_set,
-                                     criterion = im_criterion)
+        time_epoch_losses_train.append(time_epoch_loss_train)
+        temp_epoch_losses_train.append(temp_epoch_loss_train)
+        print('finished testing epoch {}'.format(epoch))
         
         ###############
         #Test the model
         ###############
+        
+        time_epoch_loss_test, temp_epoch_loss_test = test.eval_OPV_m2py_model(model = im_branch_model,
+                                                                              testing_data_set = test_data_set,
+                                                                              criterion = im_criterion)
 
-        im_test_epoch_losses.append(im_test_epoch_loss)
-        print('Test MSE = {}'.format(im_test_epoch_loss))
+        time_epoch_losses_test.append(time_epoch_loss_test)
+        temp_epoch_losses_test.append(temp_epoch_loss_test)
+        
+        total_epoch_loss = time_epoch_loss_test + temp_epoch_loss_test
+        total_epoch_losses.append(total_epoch_loss)
+        
+        print('Test - Time MSE = {};'.format(time_epoch_loss_test))
+        print('Test - Temp MSE = {};'.format(temp_epoch_loss_test))
+        print('Test - Total MSE = {};'.format(total_epoch_loss))
         
     
         
-    epochs = np.arange(1, (args.epochs+1), 1)
+    epochs = np.arange(1, (epochs+1), 1)
 
     nuts.plot_OPV_df_loss(epochs, train_epoch_losses, test_epoch_losses,
                          pce_train_epoch_losses, pce_test_epoch_losses,
@@ -130,20 +144,23 @@ def train_test_cycle(args, tracker = None):
     ff_mape = mape.forward(FF_out, ff_labels)
 
     print('FF: mse = {}, mape = {}, r2 = {}'.format(ff_mse, ff_mape, ff_r2))
+    
+    total_MAPE = pce_mape + voc_mape + jsc_mape + ff_mape
+    total_r2 = pce_r2 + voc_r2 + jsc_r2 + ff_r2
+    
+    print('Test - Total MAPE = {};'.format(total_MAPE))
+    print('Test - Total r2 = {};'.format(total_r2))
 
 
-def parse_args():
+if __name__ == '__main__':
+    
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--lr', type=float, default=0.001)
     
-    return parser.parse_args
+    args = parser.parse_args()
 
-
-if __name__ == '__main__':
-    args = parse_args()
-
-    train(args)
+    train_test_cycle(args)
 
     
