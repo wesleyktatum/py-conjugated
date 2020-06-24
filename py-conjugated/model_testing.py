@@ -9,6 +9,7 @@ import sys
 import numpy as np
 import torch
 import torch.nn as nn
+from sklearn.metrics import r2_score
 
 module_path = os.path.abspath(os.path.join('./'))
 if module_path not in sys.path:
@@ -104,7 +105,7 @@ def eval_OPV_df_model(model, testing_data_set):
     return test_epoch_loss, pce_test_epoch_loss, voc_test_epoch_loss, jsc_test_epoch_loss, ff_test_epoch_loss, pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc
 
 
-def eval_OPV_m2py_model(model, testing_dataset, criterion):
+def eval_OPV_m2py_model(model, testing_data_set, criterion):
     
 #     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
@@ -114,26 +115,30 @@ def eval_OPV_m2py_model(model, testing_dataset, criterion):
     #don't update nodes during evaluation b/c not training
     with torch.no_grad():
         test_losses = []
+        time_loss_list = []
+        temp_loss_list = []
+        
+        test_accs = []
+        time_accs = []
+        temp_accs = []
+        
+        test_r2s = []
+        time_r2s = []
+        temp_r2s = []
+        
         test_total = 0
 
-        for images, labels in testing_dataset:
+        for images, labels in testing_data_set:
 #             images = images.to(device)
 #             labels = labels.to(device)
             
 
             im_pred, im_enc = model(images)
-#             im_pred = im_pred.squeeze()
     
             time_pred = im_pred[:,0]
             temp_pred = im_pred[:,1]
             time_label = labels[:,0]
             temp_label = labels[:,1]
-
-            print("pre")
-            print(time_pred.size())
-            print(time_label.size())
-            print(temp_pred.size())
-            print(temp_label.size())
 
             #drop superfluous dimensions (e.g. batch)
             time_pred = time_pred.view(-1)
@@ -141,27 +146,50 @@ def eval_OPV_m2py_model(model, testing_dataset, criterion):
             time_label = time_label.view(-1)
             temp_label = temp_label.view(-1)
 
-            print("post")
-            print(time_pred.size())
-            print(time_label.size())
-            print(temp_pred.size())
-            print(temp_label.size())
-
             #Gather the loss
             loss = nn.MSELoss()
             time_loss = loss(time_pred, time_label)
             temp_loss = loss(temp_pred, temp_label)
+            total_loss = time_loss + temp_loss
             
+            test_losses.append(total_loss)
             time_loss_list.append(time_loss.item())
             temp_loss_list.append(temp_loss.item())
+            
+            #gather the accs
+            acc = pilf.MAPE()
+            time_acc = acc(time_pred, time_label)
+            temp_acc = acc(temp_pred, temp_label)
+            test_acc = time_acc + temp_acc
+            
+            test_accs.append(test_acc)
+            time_accs.append(time_acc)
+            temp_accs.append(temp_acc)
+            
+            #gather the r2s
+            time_r2 = r2_score(time_label, time_pred)
+            temp_r2 = r2_score(temp_label, temp_pred)
+            test_r2 = time_r2 + temp_r2
+            
+            test_r2s.append(test_r2)
+            time_r2s.append(time_r2)
+            temp_r2s.append(temp_r2)
             
             test_total += 1
 
         time_epoch_loss = sum(time_loss_list)/test_total
         temp_epoch_loss = sum(temp_loss_list)/test_total
+        test_epoch_loss = sum(total_loss)/test_total
+        time_epoch_acc = sum(time_accs)/test_total
+        temp_epoch_acc = sum(temp_accs)/test_total
+        test_epoch_acc = sum(test_accs)/test_total
+        time_epoch_r2 = sum(time_r2s)/test_total
+        temp_epoch_r2 = sum(temp_r2s)/test_total
+        test_epoch_r2 = sum(test_r2s)/test_total
+        
 
-#         print (f"Total testing loss is: {total_test_loss}")
-    return time_epoch_loss, temp_epoch_loss
+
+    return time_epoch_loss, temp_epoch_loss, test_epoch_loss, time_epoch_acc, temp_epoch_acc, test_epoch_acc, time_epoch_r2, temp_epoch_r2, test_epoch_r2
 
 
 def eval_OFET_df_model(model, testing_data_set):

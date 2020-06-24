@@ -14,7 +14,7 @@ import torch.nn.functional as F
 module_path = os.path.abspath(os.path.join('./'))
 if module_path not in sys.path:
     sys.path.append(module_path)
-import physically_informed_loss_functions as PhysLoss
+import physically_informed_loss_functions as pilf
 
 
 def train_OPV_df_model(model, training_data_set, optimizer):
@@ -38,10 +38,10 @@ def train_OPV_df_model(model, training_data_set, optimizer):
     model.train()
     
     #Define boundaries for physical solutions
-#     pce_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
-#     voc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
-#     jsc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
-#     ff_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
+#     pce_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
+#     voc_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
+#     jsc_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
+#     ff_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
 
     pce_criterion = nn.MSELoss()
     voc_criterion = nn.MSELoss()
@@ -114,21 +114,11 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
                 
         optimizer.zero_grad()
         im_pred, im_enc = model(images)
-        print(im_pred.size())
-        print(im_pred)
-        print(labels.size())
-        
         
         time_pred = im_pred[:,0]
         temp_pred = im_pred[:,1]
         time_label = labels[:,0]
         temp_label = labels[:,1]
-        
-        print("pre")
-        print(time_pred.size())
-        print(time_label.size())
-        print(temp_pred.size())
-        print(temp_label.size())
         
         #drop superfluous dimensions (e.g. batch)
         time_pred = time_pred.view(-1)
@@ -136,36 +126,23 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         time_label = time_label.view(-1)
         temp_label = temp_label.view(-1)
         
-        print("post")
-        print(time_pred.size())
-        print(time_label.size())
-        print(temp_pred.size())
-        print(temp_label.size())
-        
         #Gather the loss
         time_loss_func = nn.MSELoss()
         temp_loss_func = nn.MSELoss()
         time_loss = time_loss_func(time_pred, time_label)
         temp_loss = temp_loss_func(temp_pred, temp_label)
-        print("loss calculated")
         
         time_loss_list.append(time_loss.item())
         temp_loss_list.append(temp_loss.item())
         
-        
-#         loss = F.nll_loss(im_pred, labels)
-#         loss_list.append(loss.item())
-        
         # backprop and perform Adam optimization
         torch.autograd.backward(time_loss, temp_loss)
-        print("backprop calculated")
-#         torch.autograd.backward(loss)
         optimizer.step()
         print("end of loop {}".format(epoch))
     
-    total_count = len(loss_list)
+    total_count = len(time_loss_list)
     time_epoch_loss = sum(time_loss_list)/total_count
-    temp_epoch_loss = sum(test_loss_list)/total_count
+    temp_epoch_loss = sum(temp_loss_list)/total_count
     
     return time_epoch_loss, temp_epoch_loss
 
@@ -190,10 +167,10 @@ def train_OFET_df_model(model, training_data_set, optimizer):
     #switch model to training mode
     model.train()
     
-#     mu_criterion = PhysLoss.ThresholdedMSELoss(lower = -2, upper = 4)
-#     r_criterion = PhysLoss.ThresholdedMSELoss(lower = -3, upper = 3)
-#     on_off_criterion = PhysLoss.ThresholdedMSELoss(lower = -0.75, upper = 6.5)
-#     vt_criterion = PhysLoss.ThresholdedMSELoss(lower = -2, upper = 6)
+#     mu_criterion = pilf.ThresholdedMSELoss(lower = -2, upper = 4)
+#     r_criterion = pilf.ThresholdedMSELoss(lower = -3, upper = 3)
+#     on_off_criterion = pilf.ThresholdedMSELoss(lower = -0.75, upper = 6.5)
+#     vt_criterion = pilf.ThresholdedMSELoss(lower = -2, upper = 6)
 
     mu_criterion = nn.MSELoss()
     r_criterion = nn.MSELoss()
