@@ -56,9 +56,10 @@ def train_OPV_df_model(model, training_data_set, optimizer):
         jsc_labels = jsc_labels.to(device)
         ff_labels = ff_labels.to(device)
         
-        model.zero_grad() #zero out any gradients from prior loops 
-        PCE_out, Voc_out, Jsc_out, FF_out = model(train_data) #gather model
-        predictions for this loop
+        model.zero_grad() #zero out any gradients from prior loops
+        
+        #gather model predictions for this loop
+        PCE_out, Voc_out, Jsc_out, FF_out = model(train_data) 
         
         #calculate error in the predictions
         pce_loss = pce_criterion(PCE_out, pce_labels)
@@ -138,7 +139,6 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         # backprop and perform Adam optimization
         torch.autograd.backward(time_loss, temp_loss)
         optimizer.step()
-        print("end of loop {}".format(epoch))
     
     total_count = len(time_loss_list)
     time_epoch_loss = sum(time_loss_list)/total_count

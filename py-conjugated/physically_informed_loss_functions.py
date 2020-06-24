@@ -123,7 +123,7 @@ class MAPE(nn.Module):
                     
                 elif y == 0.0:
                     error = x
-                    y = x - 0.001
+                    y = x * 0.001
                     ae =torch.abs(error)
                     ape = torch.div(ae, y)
                     
@@ -133,16 +133,8 @@ class MAPE(nn.Module):
                     error = torch.add(x, torch.neg(y))
                     ae =torch.abs(error)
                     ape = torch.div(ae, y)
-                    
-#                 print (f"x = {x}")
-#                 print (f"y = {y}")
 
-                
-#                 print (f"error = {error}")
-#                 print (f"absolute error = {ae}")
-#                 print (f"absolute percent error = {ape}")
-
-                absolute_percent_error_list.append(ape.item())
+                absolute_percent_error_list.append(ape)
 
             mape = 0
             for el in absolute_percent_error_list:
@@ -151,11 +143,8 @@ class MAPE(nn.Module):
                 else:
                     mape += el
                     
-#                 print (f"el = {el}")
-#                 print (f"loop map = {mape}")
             mape = mape / count
             mape = mape * 100
-#             print (f"mape = {mape}")
         
         return mape
     

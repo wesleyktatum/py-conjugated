@@ -14,7 +14,7 @@ from sklearn.metrics import r2_score
 module_path = os.path.abspath(os.path.join('./'))
 if module_path not in sys.path:
     sys.path.append(module_path)
-import physically_informed_loss_functions as PhysLoss
+import physically_informed_loss_functions as pilf
 
 
 def eval_OPV_df_model(model, testing_data_set):
@@ -24,17 +24,17 @@ def eval_OPV_df_model(model, testing_data_set):
     #evaluate the model
     model.eval()
     
-#     pce_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
-#     voc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
-#     jsc_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
-#     ff_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.2)
+#     pce_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.2)
+#     voc_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.2)
+#     jsc_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.2)
+#     ff_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.2)
     
     pce_criterion = nn.MSELoss()
     voc_criterion = nn.MSELoss()
     jsc_criterion = nn.MSELoss()
     ff_criterion = nn.MSELoss()
     
-    accuracy = PhysLoss.MAPE()
+    accuracy = pilf.MAPE()
 
     #don't update nodes during evaluation b/c not training
     with torch.no_grad():
@@ -150,7 +150,7 @@ def eval_OPV_m2py_model(model, testing_data_set, criterion):
             loss = nn.MSELoss()
             time_loss = loss(time_pred, time_label)
             temp_loss = loss(temp_pred, temp_label)
-            total_loss = time_loss + temp_loss
+            total_loss = time_loss.item() + temp_loss.item()
             
             test_losses.append(total_loss)
             time_loss_list.append(time_loss.item())
@@ -160,15 +160,15 @@ def eval_OPV_m2py_model(model, testing_data_set, criterion):
             acc = pilf.MAPE()
             time_acc = acc(time_pred, time_label)
             temp_acc = acc(temp_pred, temp_label)
-            test_acc = time_acc + temp_acc
+            test_acc = time_acc.data.numpy() + temp_acc.data.numpy()
             
             test_accs.append(test_acc)
-            time_accs.append(time_acc)
-            temp_accs.append(temp_acc)
+            time_accs.append(time_acc.data.numpy())
+            temp_accs.append(temp_acc.data.numpy())
             
             #gather the r2s
-            time_r2 = r2_score(time_label, time_pred)
-            temp_r2 = r2_score(temp_label, temp_pred)
+            time_r2 = r2_score(time_label.data.numpy(), time_pred.data.numpy())
+            temp_r2 = r2_score(temp_label.data.numpy(), temp_pred.data.numpy())
             test_r2 = time_r2 + temp_r2
             
             test_r2s.append(test_r2)
@@ -179,7 +179,7 @@ def eval_OPV_m2py_model(model, testing_data_set, criterion):
 
         time_epoch_loss = sum(time_loss_list)/test_total
         temp_epoch_loss = sum(temp_loss_list)/test_total
-        test_epoch_loss = sum(total_loss)/test_total
+        test_epoch_loss = sum(test_losses)/test_total
         time_epoch_acc = sum(time_accs)/test_total
         temp_epoch_acc = sum(temp_accs)/test_total
         test_epoch_acc = sum(test_accs)/test_total
@@ -199,12 +199,12 @@ def eval_OFET_df_model(model, testing_data_set):
     #evaluate the model
     model.eval()
     
-    mu_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
-    r_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
-    on_off_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
-    vt_criterion = PhysLoss.ThresholdedMSELoss(lower = 0, upper = 1.5)
+    mu_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
+    r_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
+    on_off_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
+    vt_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
     
-    accuracy = PhysLoss.MAPE()
+    accuracy = pilf.MAPE()
 
     #don't update nodes during evaluation b/c not training
     with torch.no_grad():
