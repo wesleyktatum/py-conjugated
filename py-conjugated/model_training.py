@@ -99,8 +99,11 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
 #     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     total_step = len(training_data_set)
-    time_loss_list = []
-    temp_loss_list = []
+    pce_loss_list = []
+    voc_loss_list = []
+    jsc_loss_list = []
+    voc_loss_list = []
+    total_loss_list = []
     
     model.train()
     
@@ -114,37 +117,34 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         # Run the forward pass
                 
         optimizer.zero_grad()
-        im_pred, im_enc = model(images)
-        
-        time_pred = im_pred[:,0]
-        temp_pred = im_pred[:,1]
-        time_label = labels[:,0]
-        temp_label = labels[:,1]
-        
-        #drop superfluous dimensions (e.g. batch)
-        time_pred = time_pred.view(-1)
-        temp_pred = temp_pred.view(-1)
-        time_label = time_label.view(-1)
-        temp_label = temp_label.view(-1)
+        pce_pred, voc_pred, jsc_pred, ff_pred, im_enc = model(images)
         
         #Gather the loss
-        time_loss_func = nn.MSELoss()
-        temp_loss_func = nn.MSELoss()
-        time_loss = time_loss_func(time_pred, time_label)
-        temp_loss = temp_loss_func(temp_pred, temp_label)
+        pce_loss = criterion(pce_pred, labels[0])
+        voc_loss = criterion(voc_pred, labels[1])
+        jsc_loss = criterion(jsc_pred, labels[2])
+        ff_loss = criterion(ff_pred, labels[3])
         
-        time_loss_list.append(time_loss.item())
-        temp_loss_list.append(temp_loss.item())
+        total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
         
-        # backprop and perform Adam optimization
-        torch.autograd.backward(time_loss, temp_loss)
+        #BACKPROPOGATE LIKE A MF
+        torch.autograd.backward([pce_loss, voc_loss, jsc_loss, ff_loss])
         optimizer.step()
+        
+        #gather the loss
+        pce_loss_list.append(pce_loss)
+        voc_loss_list.append(voc_loss)
+        jsc_loss_list.append(jsc_loss)
+        voc_loss_list.append(ff_loss)
+        total_loss_list.append(total_loss)
     
-    total_count = len(time_loss_list)
-    time_epoch_loss = sum(time_loss_list)/total_count
-    temp_epoch_loss = sum(temp_loss_list)/total_count
+    total_count = len(total_loss_list)
+    pce_epoch_loss = sum(pce_loss_list)/total_count
+    voc_epoch_loss = sum(voc_loss_list)/total_count
+    jsc_epoch_loss = sum(jsc_loss_list)/total_count
+    ff_epoch_loss = sum(ff_loss_list)/total_count
     
-    return time_epoch_loss, temp_epoch_loss
+    return [pce_loss, voc_loss, jsc_loss, ff_loss]
 
 
 def train_OFET_df_model(model, training_data_set, optimizer):

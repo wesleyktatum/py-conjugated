@@ -101,25 +101,51 @@ class OPV_m2py_NN(nn.Module):
         )
         
         self.layer4 = nn.Sequential(
-            nn.Linear(131072, 5000),
             nn.Dropout(),               #helps avoid over-fitting
-            nn.Linear(5000, 1000),
-            nn.Linear(1000, 100)
+            nn.Linear(131072, 5000),
+            nn.ReLU()
         )
         
-        self.out_layer = nn.Linear(100, 2) #predicting anneal time and temp
+        self.pce_layer = nn.Sequential(
+            nn.Linear(5000, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
+        )
+        
+        self.voc_layer = nn.Sequential(
+            nn.Linear(5000, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
+        )
+        
+        self.jsc_layer = nn.Sequential(
+            nn.Linear(5000, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
+        )
+        
+        self.ff_layer = nn.Sequential(
+            nn.Linear(5000, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
+        )
             
     def forward(self, im):
+        #convolution series
         im_encoding = self.layer1(im)
         im_encoding = self.layer2(im_encoding)
         im_encoding = self.layer3(im_encoding)
         
-#         im_out = im_out.view(-1,5000) #reshape output for linear layers
-        
+        #linear encoding
         im_encoding = self.layer4(im_encoding)
-        im_prediction = self.out_layer(im_encoding)
         
-        return im_prediction, im_encoding
+        #output layers
+        pce_out = self.pce_layer(im_encoding)
+        voc_out = self.pce_layer(im_encoding)
+        jsc_out = self.pce_layer(im_encoding)
+        ff_out = self.pce_layer(im_encoding)
+        
+        return pce_out, voc_out, jsc_out, ff_out, im_encoding
     
     
     #define the neural network

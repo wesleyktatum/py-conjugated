@@ -46,6 +46,9 @@ def load_s3_ims(bucket_name, filepath):
         if fl[-1] == '/':
             pass
         
+        if fl[-1] == 'x':
+            sample_labels = pd.read_excel(obj['Body'])
+        
         else:
             byte_stream = io.BytesIO(obj.get()['Body'].read())
             
@@ -102,10 +105,58 @@ def load_s3_ims(bucket_name, filepath):
                 dev = fl[d_idx]
 
             #assign entry identifiers to label key
-            label_dict[i] = {'Anneal_time' : int(anl_time), 'Anneal_temp' : int(anl_temp),
-                                     'Substrate' : int(sub), 'Device': int(dev)}
+            label_dict[i] = {'Anneal_time' : int(anl_time),
+                             'Anneal_temp' : int(anl_temp),
+                             'Substrate' : int(sub),
+                             'Device': int(dev),
+#                              'PCE': ,
+#                              'VocL': ,
+#                              'Jsc': ,
+#                              'FF': ,
+                            }
+            
+        label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')    
         
-    label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')
+        for i, row in label_df.iterrows():
+
+              #query for sample labels that = test set identifiers
+            time_matches = sample_labels[sample_labels['Anneal_temp'] == row[0]]
+        #     print(time_matches.shape)
+            temp_matches = time_matches.query('Anneal_time == @row[1]')
+        #     print(temp_matches.shape)
+            sub_matches = temp_matches.query('Substrate == @row[2]')
+        #     print(sub_matches.shape)
+             matches = sub_matches.query('Device == @row[3]')
+            print(matches.shape)
+
+            if len(matches) > 0:
+                #append index of match to test_sample_idxs
+                match_idxs = matches.index[:].tolist()
+                sample_indexs.append(match_idxs[0])
+
+            else:
+                pass
+            
+        pce = []
+        voc = []
+        jsc = []
+        ff = []
+        indxs = []
+
+        for indx in sample_indexs:
+            row = total_df[total_df.index == indx]
+
+            pce.append(row['PCE'].item())
+            voc.append(row['VocL'].item())
+            jsc.append(row['Jsc'].item())
+            ff.append(row['FF'].item())
+            indxs.append(row['Unnamed: 0'].item())
+
+        label_df['PCE'] = pce
+        label_df['Vocl'] = voc
+        label_df['Jsc'] = jsc
+        label_df['FF'] = ff
+        label_df['Index'] = indxs
             
     return im_dict, label_df
 
@@ -145,6 +196,9 @@ class OPV_ImDataset(torch.utils.data.Dataset):
         label_tensor =  torch.tensor(label_df[:2]).float()
         
         return label_tensor
+    
+    
+    def load_sample_key(self)
     
     
 class local_OPV_ImDataset(torch.utils.data.Dataset):
