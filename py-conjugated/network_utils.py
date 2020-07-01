@@ -24,43 +24,43 @@ def load_s3_ims(bucket_name, filepath):
     It returns a dictionary of those images, as well as a pd.DataFrame with
     the image's identifier labels.
     """
-    
+    #get s3 directory info
     client = boto3.client('s3')
     resource = boto3.resource('s3')
     s3_bucket = resource.Bucket(bucket_name)
     
+    #gather s3 file objects from directory
     files = list(s3_bucket.objects.filter(Prefix = filepath))
+    print(len(files))
     
     im_dict = {}
     label_dict = {}
+    
+    #loop through each file, which is an m2py labelset
     for i, obj in enumerate(files):
-    #     print(obj.bucket_name)
-    #     print(obj.key)
+        #get filename
         fl = obj.key[37:]
-#         print(fl)
         anl_temp = 0
         anl_time = 0
         sub = 0
         dev = 0
         
+        #skip directories
         if fl[-1] == '/':
             pass
-        
+        #skip excel files
         if fl[-1] == 'x':
             sample_labels = pd.read_excel(obj['Body'])
         
-        else:
+        if fl[-1] == 'y':
             byte_stream = io.BytesIO(obj.get()['Body'].read())
             
             im = np.load(byte_stream)
-#             plt.imshow(im[:,:,0])
-#             plt.show()
-
+            
             im_index = len(im_dict)
             im_dict[im_index] = im
 
             if 'NOANNEAL' in fl:
-                #time = temp = 0
                 anl_temp = 0
                 anl_time = 0
 
@@ -109,54 +109,46 @@ def load_s3_ims(bucket_name, filepath):
                              'Anneal_temp' : int(anl_temp),
                              'Substrate' : int(sub),
                              'Device': int(dev),
-#                              'PCE': ,
-#                              'VocL': ,
-#                              'Jsc': ,
-#                              'FF': ,
                             }
             
-        label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')    
-        
-        for i, row in label_df.iterrows():
+    label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')    
 
-              #query for sample labels that = test set identifiers
-            time_matches = sample_labels[sample_labels['Anneal_temp'] == row[0]]
-        #     print(time_matches.shape)
-            temp_matches = time_matches.query('Anneal_time == @row[1]')
-        #     print(temp_matches.shape)
-            sub_matches = temp_matches.query('Substrate == @row[2]')
-        #     print(sub_matches.shape)
-            matches = sub_matches.query('Device == @row[3]')
-            print(matches.shape)
+    sample_indexs = []
+    for i, row in label_df.iterrows():
+ 
+        #query for sample labels that = test set identifiers
+        time_matches = sample_labels[sample_labels['Anneal_temp'] == row[0]]
+        temp_matches = time_matches.query('Anneal_time == @row[1]')
+        sub_matches = temp_matches.query('Substrate == @row[2]')
+        matches = sub_matches.query('Device == @row[3]')
+        if len(matches) <= 0:
+            pass
 
-            if len(matches) > 0:
-                #append index of match to test_sample_idxs
-                match_idxs = matches.index[:].tolist()
-                sample_indexs.append(match_idxs[0])
-
-            else:
-                pass
+        else:
+            #append index of match to test_sample_idxs
+            match_idxs = matches.index[:].tolist()
+            sample_indexs.append(match_idxs[0])
             
-        pce = []
-        voc = []
-        jsc = []
-        ff = []
-        indxs = []
+    pce = []
+    voc = []
+    jsc = []
+    ff = []
+    indxs = []
 
-        for indx in sample_indexs:
-            row = total_df[total_df.index == indx]
+    for indx in sample_indexs:
+        row = total_df[total_df.index == indx]
 
-            pce.append(row['PCE'].item())
-            voc.append(row['VocL'].item())
-            jsc.append(row['Jsc'].item())
-            ff.append(row['FF'].item())
-            indxs.append(row['Unnamed: 0'].item())
+        pce.append(row['PCE'].item())
+        voc.append(row['VocL'].item())
+        jsc.append(row['Jsc'].item())
+        ff.append(row['FF'].item())
+        indxs.append(row['Unnamed: 0'].item())
 
-        label_df['PCE'] = pce
-        label_df['Vocl'] = voc
-        label_df['Jsc'] = jsc
-        label_df['FF'] = ff
-        label_df['Index'] = indxs
+    label_df['PCE'] = pce
+    label_df['Vocl'] = voc
+    label_df['Jsc'] = jsc
+    label_df['FF'] = ff
+    label_df['Index'] = indxs
             
     return im_dict, label_df
 
