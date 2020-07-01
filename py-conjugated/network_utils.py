@@ -36,6 +36,15 @@ def load_s3_ims(bucket_name, filepath):
     im_dict = {}
     label_dict = {}
     
+    
+    for i, obj in enumerate(files):
+        #get filename
+        fl = obj.key[37:]
+        if fl[-1] == 'x':
+            sample_labels = pd.read_excel(obj['Body'])
+        else:
+            pass
+    
     #loop through each file, which is an m2py labelset
     for i, obj in enumerate(files):
         #get filename
@@ -50,7 +59,7 @@ def load_s3_ims(bucket_name, filepath):
             pass
         #skip excel files
         if fl[-1] == 'x':
-            sample_labels = pd.read_excel(obj['Body'])
+            pass
         
         if fl[-1] == 'y':
             byte_stream = io.BytesIO(obj.get()['Body'].read())
@@ -158,7 +167,7 @@ class OPV_ImDataset(torch.utils.data.Dataset):
     This class takes in an s3 bucket name and filepath, and calls nuts.load_s3_ims
     to initialize a custom dataset class that inherets from PyTorch. 
     """
-    def __init__(self,bucket_name, filepath):
+    def __init__(self, bucket_name, filepath):
         super(OPV_ImDataset).__init__()
         self.im_dict, self.im_labels = load_s3_ims(bucket_name, filepath)
         self.keys = self.im_labels.index
