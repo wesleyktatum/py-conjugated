@@ -105,7 +105,7 @@ def eval_OPV_df_model(model, testing_data_set):
     return test_epoch_loss, pce_test_epoch_loss, voc_test_epoch_loss, jsc_test_epoch_loss, ff_test_epoch_loss, pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc
 
 
-def eval_OPV_m2py_model(model, testing_data_set, criterion):
+def eval_OPV_m2py_model(model, test_data_set, criterion):
     
 #     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
@@ -114,7 +114,7 @@ def eval_OPV_m2py_model(model, testing_data_set, criterion):
 
     #don't update nodes during evaluation b/c not training
     with torch.no_grad():
-        total_step = len(training_data_set)
+        total_step = len(test_data_set)
         
         pce_loss_list = []
         voc_loss_list = []
@@ -135,7 +135,7 @@ def eval_OPV_m2py_model(model, testing_data_set, criterion):
         total_r2_list = []
         
         batch_iterator = 0
-        for images, labels in training_data_set:
+        for images, pce_labels, voc_labels, jsc_labels, ff_labels in test_data_set:
             batch_iterator+=1
             print(f'image # {batch_iterator}')
     #         images = images.to(device)

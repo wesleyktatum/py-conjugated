@@ -108,7 +108,7 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     model.train()
     
     batch_iterator = 0
-    for images, labels in training_data_set:
+    for images, pce_labels, voc_labels, jsc_labels, ff_labels in training_data_set:
         batch_iterator+=1
         print(f'image # {batch_iterator}')
 #         images = images.to(device)
@@ -120,10 +120,10 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         pce_pred, voc_pred, jsc_pred, ff_pred, im_enc = model(images)
         
         #Gather the loss
-        pce_loss = criterion(pce_pred, labels[0])
-        voc_loss = criterion(voc_pred, labels[1])
-        jsc_loss = criterion(jsc_pred, labels[2])
-        ff_loss = criterion(ff_pred, labels[3])
+        pce_loss = criterion(pce_pred, pce_labels)
+        voc_loss = criterion(voc_pred, voc_labels)
+        jsc_loss = criterion(jsc_pred, jsc_labels)
+        ff_loss = criterion(ff_pred, ff_labels)
         
         total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
         

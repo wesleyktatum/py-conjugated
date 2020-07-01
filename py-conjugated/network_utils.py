@@ -126,7 +126,7 @@ def load_s3_ims(bucket_name, filepath):
         #     print(temp_matches.shape)
             sub_matches = temp_matches.query('Substrate == @row[2]')
         #     print(sub_matches.shape)
-             matches = sub_matches.query('Device == @row[3]')
+            matches = sub_matches.query('Device == @row[3]')
             print(matches.shape)
 
             if len(matches) > 0:
@@ -196,9 +196,6 @@ class OPV_ImDataset(torch.utils.data.Dataset):
         label_tensor =  torch.tensor(label_df[:2]).float()
         
         return label_tensor
-    
-    
-    def load_sample_key(self)
     
     
 class local_OPV_ImDataset(torch.utils.data.Dataset):
