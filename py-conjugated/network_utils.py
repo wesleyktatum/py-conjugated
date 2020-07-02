@@ -31,24 +31,24 @@ def load_s3_ims(bucket_name, filepath):
     
     #gather s3 file objects from directory
     files = list(s3_bucket.objects.filter(Prefix = filepath))
-    print(len(files))
     
     im_dict = {}
     label_dict = {}
     
-    
     for i, obj in enumerate(files):
         #get filename
-        fl = obj.key[37:]
+        fl = obj.key
+        
         if fl[-1] == 'x':
-            sample_labels = pd.read_excel(obj['Body'])
+            obj1 = client.get_object(Bucket = bucket_name, Key = fl)
+            sample_labels = pd.read_excel(obj1['Body'].read())
         else:
             pass
     
     #loop through each file, which is an m2py labelset
     for i, obj in enumerate(files):
         #get filename
-        fl = obj.key[37:]
+        fl = obj.key
         anl_temp = 0
         anl_time = 0
         sub = 0
@@ -62,6 +62,7 @@ def load_s3_ims(bucket_name, filepath):
             pass
         
         if fl[-1] == 'y':
+            
             byte_stream = io.BytesIO(obj.get()['Body'].read())
             
             im = np.load(byte_stream)
@@ -69,7 +70,24 @@ def load_s3_ims(bucket_name, filepath):
             im_index = len(im_dict)
             im_dict[im_index] = im
 
-            if 'NOANNEAL' in fl:
+            if 'postexam' in fl:
+                #extract temp, time, sub, dev from filename
+                temp_start_indx = fl.index('set/') + 4
+                temp_stop_indx = fl.index('C')
+                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+
+                time_start_indx = temp_stop_indx+2
+                time_stop_indx = fl.index('min_')
+                time_stop_indx = time_stop_indx
+                anl_time = fl[time_start_indx:time_stop_indx]
+                anl_time = int(anl_time)
+
+                s_idx = fl.index('ub')+2
+
+                sub = fl[s_idx]
+                dev = 3
+
+            elif 'NOANNEAL' in fl:
                 anl_temp = 0
                 anl_time = 0
 
@@ -79,36 +97,19 @@ def load_s3_ims(bucket_name, filepath):
 
                 sub = fl[s_idx]
                 dev = fl[d_idx]
-
-            elif 'postexam' in fl:
+            else:
                 #extract temp, time, sub, dev from filename
+                temp_start_indx = fl.index('set/') + 4
                 temp_stop_indx = fl.index('C')
-                temp_start_indx = fl.index('/') + 1
                 anl_temp = int(fl[temp_start_indx:temp_stop_indx])
 
                 time_start_indx = temp_stop_indx+2
-                time_stop_indx = fl.index('m')
-                time_stop_indx = time_stop_indx
+                time_stop_indx = fl.index('min_')
                 anl_time = fl[time_start_indx:time_stop_indx]
                 anl_time = int(anl_time)
 
-                sub = 4
-                dev = 6
-
-            elif fl[-1] != '/':
-                #extract temp, time, sub, dev from filename
-                temp_stop_indx = fl.index('C')
-                temp_start_indx = fl.index('/') + 1
-                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
-
-                time_start_indx = temp_stop_indx+2
-                time_stop_indx = fl.index('m')
-                time_stop_indx = time_stop_indx
-                anl_time = fl[time_start_indx:time_stop_indx]
-                anl_time = int(anl_time)
-
-                s_idx = fl.index('b')+1
-                d_idx = fl.index('v')+1
+                s_idx = fl.index('ub')+2
+                d_idx = fl.index('ev')+2
 
                 sub = fl[s_idx]
                 dev = fl[d_idx]
@@ -123,35 +124,38 @@ def load_s3_ims(bucket_name, filepath):
     label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')    
 
     sample_indexs = []
+    pce = []
+    voc = []
+    jsc = []
+    ff = []
+    indxs = []
     for i, row in label_df.iterrows():
  
         #query for sample labels that = test set identifiers
-        time_matches = sample_labels[sample_labels['Anneal_temp'] == row[0]]
-        temp_matches = time_matches.query('Anneal_time == @row[1]')
+        time_matches = sample_labels[sample_labels['Anneal_time'] == row[0]]
+        temp_matches = time_matches.query('Anneal_temp == @row[1]')
         sub_matches = temp_matches.query('Substrate == @row[2]')
         matches = sub_matches.query('Device == @row[3]')
+        
         if len(matches) <= 0:
+            print('no matches')
+            print(row)
             pass
 
         else:
             #append index of match to test_sample_idxs
             match_idxs = matches.index[:].tolist()
             sample_indexs.append(match_idxs[0])
-            
-    pce = []
-    voc = []
-    jsc = []
-    ff = []
-    indxs = []
 
     for indx in sample_indexs:
-        row = total_df[total_df.index == indx]
+        row = sample_labels[sample_labels.index == indx]
 
         pce.append(row['PCE'].item())
         voc.append(row['VocL'].item())
         jsc.append(row['Jsc'].item())
         ff.append(row['FF'].item())
         indxs.append(row['Unnamed: 0'].item())
+        
 
     label_df['PCE'] = pce
     label_df['Vocl'] = voc
@@ -170,8 +174,7 @@ class OPV_ImDataset(torch.utils.data.Dataset):
     def __init__(self, bucket_name, filepath):
         super(OPV_ImDataset).__init__()
         self.im_dict, self.im_labels = load_s3_ims(bucket_name, filepath)
-        self.keys = self.im_labels.index
-        
+        self.keys = self.im_labels.index        
 
     def __len__(self):
         return len(self.im_dict)
@@ -180,7 +183,9 @@ class OPV_ImDataset(torch.utils.data.Dataset):
     def __getitem__(self, key):
         
         self.im_tensor = self.convert_im_to_tensors(self.im_dict[key])
-        self.label_tensor = self.convert_label_to_tensors(self.im_labels.iloc[key].tolist())
+        label_df = self.im_labels.iloc[key]
+        label_df = label_df.drop(['Anneal_time', 'Anneal_temp', 'Substrate', 'Device'])
+        self.label_tensor = self.convert_label_to_tensors(label_df)
         
         return self.im_tensor, self.label_tensor
     
@@ -194,7 +199,7 @@ class OPV_ImDataset(torch.utils.data.Dataset):
         
         
     def convert_label_to_tensors(self, label_df):
-        label_tensor =  torch.tensor(label_df[:2]).float()
+        label_tensor =  torch.tensor(label_df).float()
         
         return label_tensor
     

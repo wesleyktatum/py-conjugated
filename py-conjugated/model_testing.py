@@ -120,6 +120,7 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
         voc_loss_list = []
         jsc_loss_list = []
         voc_loss_list = []
+        ff_loss_list = []
         total_loss_list = []
         
         pce_acc_list = []
@@ -135,27 +136,22 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
         total_r2_list = []
         
         batch_iterator = 0
-        for images, pce_labels, voc_labels, jsc_labels, ff_labels in test_data_set:
+        for images, labels in test_data_set:
             batch_iterator+=1
             print(f'image # {batch_iterator}')
     #         images = images.to(device)
     #         labels = labels.to(device)
 
             # Run the forward pass
-            optimizer.zero_grad()
             pce_pred, voc_pred, jsc_pred, ff_pred, im_enc = model(images)
 
             #Gather the loss
-            pce_loss = criterion(pce_pred, labels[0])
-            voc_loss = criterion(voc_pred, labels[1])
-            jsc_loss = criterion(jsc_pred, labels[2])
-            ff_loss = criterion(ff_pred, labels[3])
+            pce_loss = criterion(pce_pred, labels[:,0])
+            voc_loss = criterion(voc_pred, labels[:,1])
+            jsc_loss = criterion(jsc_pred, labels[:,2])
+            ff_loss = criterion(ff_pred, labels[:,3])
 
             total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
-
-            #BACKPROPOGATE LIKE A MF
-            torch.autograd.backward([pce_loss, voc_loss, jsc_loss, ff_loss])
-            optimizer.step()
 
             #gather the loss
             pce_loss_list.append(pce_loss)
@@ -166,10 +162,10 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
             
             #gather the accs
             acc = pilf.MAPE()
-            pce_acc = acc(pce_pred, labels[0])
-            voc_acc = acc(voc_pred, labels[1])
-            jsc_acc = acc(jsc_pred, labels[2])
-            ff_acc = acc(ff_pred, labels[3])
+            pce_acc = acc(pce_pred, labels[:,0])
+            voc_acc = acc(voc_pred, labels[:,1])
+            jsc_acc = acc(jsc_pred, labels[:,2])
+            ff_acc = acc(ff_pred, labels[:,3])
             test_acc = pce_acc + voc_acc + jsc_acc + ff_acc
             
             total_acc_list.append(test_acc.data.numpy())
@@ -179,17 +175,17 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
             ff_acc_list.append(ff_acc.data.numpy())
             
             #gather the r2s
-            pce_r2 = r2_score(labels[0].data.numpy(), pce_pred.data.numpy())
-            voc_r2 = r2_score(labels[1].data.numpy(), voc_pred.data.numpy())
-            jsc_r2 = r2_score(labels[2].data.numpy(), jsc_pred.data.numpy())
-            ff_r2 = r2_score(labels[3].data.numpy(), ff_pred.data.numpy())
+            pce_r2 = r2_score(labels[:,0].data.numpy(), pce_pred.data.numpy())
+            voc_r2 = r2_score(labels[:,1].data.numpy(), voc_pred.data.numpy())
+            jsc_r2 = r2_score(labels[:,2].data.numpy(), jsc_pred.data.numpy())
+            ff_r2 = r2_score(labels[:,3].data.numpy(), ff_pred.data.numpy())
             test_r2 = pce_r2 + voc_r2 + jsc_r2 + ff_r2
             
-            test_r2s.append(test_r2)
-            pce_r2s.append(pce_r2)
-            voc_r2s.append(voc_r2)
-            jsc_r2s.append(jsc_r2)
-            ff_r2s.append(ff_r2)
+            total_r2_list.append(test_r2)
+            pce_r2_list.append(pce_r2)
+            voc_r2_list.append(voc_r2)
+            jsc_r2_list.append(jsc_r2)
+            ff_r2_list.append(ff_r2)
 
         total_count = len(total_loss_list)
         total_epoch_loss = sum(total_loss_list)/total_count
