@@ -138,7 +138,7 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
         batch_iterator = 0
         for images, labels in test_data_set:
             batch_iterator+=1
-            print(f'image # {batch_iterator}')
+            print(f'testing batch # {batch_iterator}')
     #         images = images.to(device)
     #         labels = labels.to(device)
 
