@@ -66,7 +66,7 @@ def train_OPV_df_model(model, training_data_set, optimizer):
         voc_loss = voc_criterion(Voc_out, voc_labels)
         jsc_loss = jsc_criterion(Jsc_out, jsc_labels)
         ff_loss = ff_criterion(FF_out, ff_labels)
-        
+                
         total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
         
         #BACKPROPOGATE LIKE A MF
@@ -115,16 +115,20 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
 #         images = images.to(device)
 #         labels = labels.to(device)
         
-        # Run the forward pass
-                
-        optimizer.zero_grad()
+        # Run the forward pass   
+        model.zero_grad()
         pce_pred, voc_pred, jsc_pred, ff_pred, im_enc = model(images)
         
+        pce_labels = labels[:,0].squeeze()
+        voc_labels = labels[:,1].squeeze()
+        jsc_labels = labels[:,2].squeeze()
+        ff_labels = labels[:,3].squeeze()
+        
         #Gather the loss
-        pce_loss = criterion(pce_pred, labels[0,0])
-        voc_loss = criterion(voc_pred, labels[0,1])
-        jsc_loss = criterion(jsc_pred, labels[0,2])
-        ff_loss = criterion(ff_pred, labels[0,3])
+        pce_loss = criterion(pce_pred, pce_labels)
+        voc_loss = criterion(voc_pred, voc_labels)
+        jsc_loss = criterion(jsc_pred, jsc_labels)
+        ff_loss = criterion(ff_pred, ff_labels)
         
         total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
         
@@ -133,11 +137,11 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         optimizer.step()
         
         #gather the loss
-        pce_loss_list.append(pce_loss)
-        voc_loss_list.append(voc_loss)
-        jsc_loss_list.append(jsc_loss)
-        voc_loss_list.append(ff_loss)
-        total_loss_list.append(total_loss)
+        pce_loss_list.append(pce_loss.item())
+        voc_loss_list.append(voc_loss.item())
+        jsc_loss_list.append(jsc_loss.item())
+        voc_loss_list.append(ff_loss.item())
+        total_loss_list.append(total_loss.item())
     
     total_count = len(total_loss_list)
     pce_epoch_loss = sum(pce_loss_list)/total_count
@@ -145,7 +149,7 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     jsc_epoch_loss = sum(jsc_loss_list)/total_count
     ff_epoch_loss = sum(ff_loss_list)/total_count
     
-    return [pce_loss, voc_loss, jsc_loss, ff_loss]
+    return [pce_epoch_loss, voc_epoch_loss, jsc_epoch_loss, ff_epoch_loss]
 
 
 def train_OFET_df_model(model, training_data_set, optimizer):

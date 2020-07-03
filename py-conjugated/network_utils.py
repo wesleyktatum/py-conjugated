@@ -41,7 +41,7 @@ def load_s3_ims(bucket_name, filepath):
         
         if fl[-1] == 'x':
             obj1 = client.get_object(Bucket = bucket_name, Key = fl)
-            sample_labels = pd.read_excel(obj1['Body'].read())
+            sample_labels = pd.read_excel(obj1['Body'])
         else:
             pass
     
@@ -49,70 +49,68 @@ def load_s3_ims(bucket_name, filepath):
     for i, obj in enumerate(files):
         #get filename
         fl = obj.key
-        anl_temp = 0
-        anl_time = 0
-        sub = 0
-        dev = 0
         
         #skip directories
-        if fl[-1] == '/':
-            pass
-        #skip excel files
-        if fl[-1] == 'x':
-            pass
-        
-        if fl[-1] == 'y':
-            
-            byte_stream = io.BytesIO(obj.get()['Body'].read())
-            
-            im = np.load(byte_stream)
-            
-            im_index = len(im_dict)
-            im_dict[im_index] = im
+        if fl[-1] != '/':
+            #skip excel files
+            if fl[-1] != 'x':
+                #only .npy files
+                if fl[-1] == 'y':
+                    anl_temp = 0
+                    anl_time = 0
+                    sub = 0
+                    dev = 0
+                    
+                    byte_stream = io.BytesIO(obj.get()['Body'].read())
 
-            if 'postexam' in fl:
-                #extract temp, time, sub, dev from filename
-                temp_start_indx = fl.index('set/') + 4
-                temp_stop_indx = fl.index('C')
-                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+                    im = np.load(byte_stream)
 
-                time_start_indx = temp_stop_indx+2
-                time_stop_indx = fl.index('min_')
-                time_stop_indx = time_stop_indx
-                anl_time = fl[time_start_indx:time_stop_indx]
-                anl_time = int(anl_time)
+                    im_index = len(im_dict)
+                    im_dict[im_index] = im
 
-                s_idx = fl.index('ub')+2
+                    if 'postexam' in fl:
+                        #extract temp, time, sub, dev from filename
+                        temp_start_indx = fl.index('set/') + 4
+                        temp_stop_indx = fl.index('C')
+                        anl_temp = int(fl[temp_start_indx:temp_stop_indx])
 
-                sub = fl[s_idx]
-                dev = 3
+                        time_start_indx = temp_stop_indx+2
+                        time_stop_indx = fl.index('min_')
+                        time_stop_indx = time_stop_indx
+                        anl_time = fl[time_start_indx:time_stop_indx]
+                        anl_time = int(anl_time)
 
-            elif 'NOANNEAL' in fl:
-                anl_temp = 0
-                anl_time = 0
+                        s_idx = fl.index('ub')+2
 
-                #extract sub and dev
-                s_idx = fl.index('S')+1
-                d_idx = fl.index('D')+1
+                        sub = fl[s_idx]
+                        dev = 3
 
-                sub = fl[s_idx]
-                dev = fl[d_idx]
-            else:
-                #extract temp, time, sub, dev from filename
-                temp_start_indx = fl.index('set/') + 4
-                temp_stop_indx = fl.index('C')
-                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+                    elif 'NOANNEAL' in fl:
+                        anl_temp = 0
+                        anl_time = 0
 
-                time_start_indx = temp_stop_indx+2
-                time_stop_indx = fl.index('min_')
-                anl_time = fl[time_start_indx:time_stop_indx]
-                anl_time = int(anl_time)
+                        #extract sub and dev
+                        s_idx = fl.index('S')+1
+                        d_idx = fl.index('D')+1
 
-                s_idx = fl.index('ub')+2
-                d_idx = fl.index('ev')+2
+                        sub = fl[s_idx]
+                        dev = fl[d_idx]
+                    else:
+                        #extract temp, time, sub, dev from filename
+                        temp_start_indx = fl.index('set/') + 4
+                        temp_stop_indx = fl.index('C')
+                        anl_temp = int(fl[temp_start_indx:temp_stop_indx])
 
-                sub = fl[s_idx]
-                dev = fl[d_idx]
+                        time_start_indx = temp_stop_indx+2
+                        time_stop_indx = fl.index('min_')
+                        anl_time = fl[time_start_indx:time_stop_indx]
+                        anl_time = int(anl_time)
+
+                        s_idx = fl.index('ub')+2
+                        d_idx = fl.index('ev')+2
+
+                        sub = fl[s_idx]
+                        dev = fl[d_idx]
 
             #assign entry identifiers to label key
             label_dict[i] = {'Anneal_time' : int(anl_time),
@@ -140,6 +138,7 @@ def load_s3_ims(bucket_name, filepath):
         if len(matches) <= 0:
             print('no matches')
             print(row)
+            
             pass
 
         else:
@@ -200,6 +199,7 @@ class OPV_ImDataset(torch.utils.data.Dataset):
         
     def convert_label_to_tensors(self, label_df):
         label_tensor =  torch.tensor(label_df).float()
+        label_tensor.view(-1,1)
         
         return label_tensor
     

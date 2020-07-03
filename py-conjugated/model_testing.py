@@ -75,17 +75,17 @@ def eval_OPV_df_model(model, testing_data_set):
             jsc_test_losses.append(jsc_test_loss.item())
             ff_test_losses.append(ff_test_loss.item())
             test_total += 1 
-            
+            print('loss')
             pce_acc = accuracy(PCE_out, pce_labels)
             voc_acc = accuracy(Voc_out, voc_labels)
             jsc_acc = accuracy(Jsc_out, jsc_labels)
             ff_acc = accuracy(FF_out, ff_labels)
-            
+            print('acc')
             pce_test_acc_list.append(pce_acc)
             voc_test_acc_list.append(voc_acc)
             jsc_test_acc_list.append(jsc_acc)
             ff_test_acc_list.append(ff_acc)
-
+            print('r2')
         test_epoch_loss = sum(test_losses)/test_total
         pce_test_epoch_loss = sum(pce_test_losses)/test_total
         voc_test_epoch_loss = sum(voc_test_losses)/test_total
@@ -154,25 +154,26 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
             total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
 
             #gather the loss
-            pce_loss_list.append(pce_loss)
-            voc_loss_list.append(voc_loss)
-            jsc_loss_list.append(jsc_loss)
-            voc_loss_list.append(ff_loss)
-            total_loss_list.append(total_loss)
+            pce_loss_list.append(pce_loss.item())
+            voc_loss_list.append(voc_loss.item())
+            jsc_loss_list.append(jsc_loss.item())
+            voc_loss_list.append(ff_loss.item())
+            total_loss_list.append(total_loss.item())
             
             #gather the accs
             acc = pilf.MAPE()
+            print(labels[:0])
             pce_acc = acc(pce_pred, labels[:,0])
             voc_acc = acc(voc_pred, labels[:,1])
             jsc_acc = acc(jsc_pred, labels[:,2])
             ff_acc = acc(ff_pred, labels[:,3])
             test_acc = pce_acc + voc_acc + jsc_acc + ff_acc
             
-            total_acc_list.append(test_acc.data.numpy())
-            pce_acc_list.append(pce_acc.data.numpy())
-            voc_acc_list.append(voc_acc.data.numpy())
-            jsc_acc_list.append(jsc_acc.data.numpy())
-            ff_acc_list.append(ff_acc.data.numpy())
+            total_acc_list.append(test_acc.item())
+            pce_acc_list.append(pce_acc.item())
+            voc_acc_list.append(voc_acc.item())
+            jsc_acc_list.append(jsc_acc.item())
+            ff_acc_list.append(ff_acc.item())
             
             #gather the r2s
             pce_r2 = r2_score(labels[:,0].data.numpy(), pce_pred.data.numpy())
