@@ -68,6 +68,7 @@ class OPV_df_NN(nn.Module):
         FF_out = self.FF_branch(out)
         
         return PCE_out, Voc_out, Jsc_out, FF_out
+        
 
 
 class OPV_m2py_NN(nn.Module):

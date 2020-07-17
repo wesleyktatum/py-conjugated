@@ -35,6 +35,7 @@ def eval_OPV_df_model(model, testing_data_set):
     ff_criterion = nn.MSELoss()
     
     accuracy = pilf.MAPE()
+#     accuracy = nn.L1Loss()
 
     #don't update nodes during evaluation b/c not training
     with torch.no_grad():
@@ -48,6 +49,13 @@ def eval_OPV_df_model(model, testing_data_set):
         voc_test_acc_list = []
         jsc_test_acc_list = []
         ff_test_acc_list = []
+        test_accs = []
+        
+        pce_test_r2_list = []
+        voc_test_r2_list = []
+        jsc_test_r2_list = []
+        ff_test_r2_list = []
+        test_r2s = []
     
         test_total = 0
 
@@ -59,50 +67,75 @@ def eval_OPV_df_model(model, testing_data_set):
             ff_labels = ff_labels.to(device)
 
             PCE_out, Voc_out, Jsc_out, FF_out = model(inputs)
-
+            
+            PCE_out.squeeze_(-1)
+            Voc_out.squeeze_(-1)
+            Jsc_out.squeeze_(-1)
+            FF_out.squeeze_(-1)
     
             # calculate loss per batch of testing data
             pce_test_loss = pce_criterion(PCE_out, pce_labels)
             voc_test_loss = voc_criterion(Voc_out, voc_labels)
             jsc_test_loss = jsc_criterion(Jsc_out, jsc_labels)
             ff_test_loss = ff_criterion(FF_out, ff_labels)
-            
-            test_loss = pce_test_loss + voc_test_loss + jsc_test_loss + ff_test_loss
-            
-            test_losses.append(test_loss.item())
+
+            #gather the losses
             pce_test_losses.append(pce_test_loss.item())
             voc_test_losses.append(voc_test_loss.item())
             jsc_test_losses.append(jsc_test_loss.item())
             ff_test_losses.append(ff_test_loss.item())
             test_total += 1 
-            print('loss')
+                        
+            #calculate the accs
             pce_acc = accuracy(PCE_out, pce_labels)
             voc_acc = accuracy(Voc_out, voc_labels)
             jsc_acc = accuracy(Jsc_out, jsc_labels)
             ff_acc = accuracy(FF_out, ff_labels)
-            print('acc')
-            pce_test_acc_list.append(pce_acc)
-            voc_test_acc_list.append(voc_acc)
-            jsc_test_acc_list.append(jsc_acc)
-            ff_test_acc_list.append(ff_acc)
-            print('r2')
-        test_epoch_loss = sum(test_losses)/test_total
+            
+            #gather the accs
+            pce_test_acc_list.append(pce_acc.item())
+            voc_test_acc_list.append(voc_acc.item())
+            jsc_test_acc_list.append(jsc_acc.item())
+            ff_test_acc_list.append(ff_acc.item())
+            
+            #calculate the r2s
+            pce_r2 = r2_score(PCE_out.data.numpy(), pce_labels.data.numpy())
+            voc_r2 = r2_score(Voc_out.data.numpy(), voc_labels.data.numpy())
+            jsc_r2 = r2_score(Jsc_out.data.numpy(), jsc_labels.data.numpy())
+            ff_r2 = r2_score(FF_out.data.numpy(), ff_labels.data.numpy())
+            
+            #gather the r2s
+            pce_test_r2_list.append(pce_r2)
+            voc_test_r2_list.append(voc_r2)
+            jsc_test_r2_list.append(jsc_r2)
+            ff_test_r2_list.append(ff_r2)
+            
         pce_test_epoch_loss = sum(pce_test_losses)/test_total
         voc_test_epoch_loss = sum(voc_test_losses)/test_total
         jsc_test_epoch_loss = sum(jsc_test_losses)/test_total
         ff_test_epoch_loss = sum(ff_test_losses)/test_total
         
+        losses = [pce_test_epoch_loss, voc_test_epoch_loss, jsc_test_epoch_loss, ff_test_epoch_loss]
+        
         pce_epoch_acc = sum(pce_test_acc_list)/test_total
         voc_epoch_acc = sum(voc_test_acc_list)/test_total
         jsc_epoch_acc = sum(jsc_test_acc_list)/test_total
         ff_epoch_acc = sum(ff_test_acc_list)/test_total 
-
-        print(f"Total Epoch Testing Loss = {test_epoch_loss}")
+        
+        accs = [pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc]
+        
+        pce_epoch_r2 = sum(pce_test_r2_list)/test_total
+        voc_epoch_r2 = sum(voc_test_r2_list)/test_total
+        jsc_epoch_r2 = sum(jsc_test_r2_list)/test_total
+        ff_epoch_r2 = sum(ff_test_r2_list)/test_total
+        
+        r2s = [pce_epoch_r2, voc_epoch_r2, jsc_epoch_r2, ff_epoch_r2]
+        
         print(f"Total Epoch Testing MAPE: PCE = {pce_epoch_acc}")
         print(f"                              Voc = {voc_epoch_acc}")
         print(f"                              Jsc = {jsc_epoch_acc}")
         print(f"                              FF = {ff_epoch_acc}")
-    return test_epoch_loss, pce_test_epoch_loss, voc_test_epoch_loss, jsc_test_epoch_loss, ff_test_epoch_loss, pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc
+    return losses, accs, r2s
 
 
 def eval_OPV_m2py_model(model, test_data_set, criterion):
@@ -145,73 +178,66 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
             # Run the forward pass
             pce_pred, voc_pred, jsc_pred, ff_pred, im_enc = model(images)
 
-            #Gather the loss
+            #calculate the loss
             pce_loss = criterion(pce_pred, labels[:,0])
             voc_loss = criterion(voc_pred, labels[:,1])
             jsc_loss = criterion(jsc_pred, labels[:,2])
             ff_loss = criterion(ff_pred, labels[:,3])
-
-            total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
 
             #gather the loss
             pce_loss_list.append(pce_loss.item())
             voc_loss_list.append(voc_loss.item())
             jsc_loss_list.append(jsc_loss.item())
             voc_loss_list.append(ff_loss.item())
-            total_loss_list.append(total_loss.item())
             
-            #gather the accs
+            #calculate the accs
             acc = pilf.MAPE()
-            print(labels[:0])
+
             pce_acc = acc(pce_pred, labels[:,0])
             voc_acc = acc(voc_pred, labels[:,1])
             jsc_acc = acc(jsc_pred, labels[:,2])
             ff_acc = acc(ff_pred, labels[:,3])
-            test_acc = pce_acc + voc_acc + jsc_acc + ff_acc
             
-            total_acc_list.append(test_acc.item())
+            #gather the accs
             pce_acc_list.append(pce_acc.item())
             voc_acc_list.append(voc_acc.item())
             jsc_acc_list.append(jsc_acc.item())
             ff_acc_list.append(ff_acc.item())
             
-            #gather the r2s
+            #calculate the r2s
             pce_r2 = r2_score(labels[:,0].data.numpy(), pce_pred.data.numpy())
             voc_r2 = r2_score(labels[:,1].data.numpy(), voc_pred.data.numpy())
             jsc_r2 = r2_score(labels[:,2].data.numpy(), jsc_pred.data.numpy())
             ff_r2 = r2_score(labels[:,3].data.numpy(), ff_pred.data.numpy())
-            test_r2 = pce_r2 + voc_r2 + jsc_r2 + ff_r2
             
-            total_r2_list.append(test_r2)
+            #gather the r2s
             pce_r2_list.append(pce_r2)
             voc_r2_list.append(voc_r2)
             jsc_r2_list.append(jsc_r2)
             ff_r2_list.append(ff_r2)
 
-        total_count = len(total_loss_list)
-        total_epoch_loss = sum(total_loss_list)/total_count
+        total_count = len(pce_loss_list)
+        
         pce_epoch_loss = sum(pce_loss_list)/total_count
         voc_epoch_loss = sum(voc_loss_list)/total_count
         jsc_epoch_loss = sum(jsc_loss_list)/total_count
         ff_epoch_loss = sum(ff_loss_list)/total_count
         
-        losses = [total_epoch_loss, pce_epoch_loss, voc_epoch_loss, ff_epoch_loss]
+        losses = [pce_epoch_loss, voc_epoch_loss, ff_epoch_loss]
         
-        total_epoch_acc = sum(total_acc_list)/total_count
         pce_epoch_acc = sum(pce_acc_list)/total_count
         voc_epoch_acc = sum(voc_acc_list)/total_count
         jsc_epoch_acc = sum(jsc_acc_list)/total_count
         ff_epoch_acc = sum(ff_acc_list)/total_count
         
-        accs = [total_epoch_acc, pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc]
+        accs = [pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc]
         
-        total_epoch_r2 = sum(total_r2_list)/total_count
         pce_epoch_r2 = sum(pce_r2_list)/total_count
         voc_epoch_r2 = sum(voc_r2_list)/total_count
         jsc_epoch_r2 = sum(jsc_r2_list)/total_count
         ff_epoch_r2 = sum(ff_r2_list)/total_count
         
-        r2s = [total_epoch_r2, pce_epoch_r2, voc_epoch_r2, jsc_epoch_r2, ff_epoch_r2]
+        r2s = [pce_epoch_r2, voc_epoch_r2, jsc_epoch_r2, ff_epoch_r2]
 
 
     return losses, accs, r2s

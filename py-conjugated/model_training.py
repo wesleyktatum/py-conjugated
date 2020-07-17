@@ -86,10 +86,10 @@ def train_OPV_df_model(model, training_data_set, optimizer):
     epoch_loss = sum(train_losses)/train_total
     train_epoch_loss.append(epoch_loss)
     
-    pce_train_epoch_loss.append(sum(pce_train_losses)/train_total)
-    voc_train_epoch_loss.append(sum(voc_train_losses)/train_total)
-    jsc_train_epoch_loss.append(sum(jsc_train_losses)/train_total)
-    ff_train_epoch_loss.append(sum(ff_train_losses)/train_total)
+    pce_train_epoch_loss = sum(pce_train_losses)/train_total
+    voc_train_epoch_loss = sum(voc_train_losses)/train_total
+    jsc_train_epoch_loss = sum(jsc_train_losses)/train_total
+    ff_train_epoch_loss = sum(ff_train_losses)/train_total
     
     return model, train_epoch_loss, pce_train_epoch_loss, voc_train_epoch_loss, jsc_train_epoch_loss, ff_train_epoch_loss
 

@@ -117,8 +117,11 @@ class MAPE(nn.Module):
                 count += 1
                 
                 if x == 0.0:
-                    error = torch.neg(torch.tensor(y))
+                    #error
+                    error = torch.neg(y)
+                    #absolute error
                     ae =torch.abs(error)
+                    #absolute percent error
                     ape = torch.div(ae, y)
                     
                 elif y == 0.0:
