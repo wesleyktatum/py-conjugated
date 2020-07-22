@@ -684,3 +684,51 @@ def plot_OFET_parity(mu_labels, mu_out, r_labels, r_out,
     ax.set_xlabel("Ground Truth")
     plt.title('Vt Parity')
     plt.show()
+    
+    
+def plot_best_fit_lrs(fit_dict):
+    """
+    A function that plots the best loss, accuracy, and r2 of a lr fit series. Note
+    that the epoch shown is loss's best epoch, which many not correspond to the best
+    epoch for accuracy or r2.
+    """
+    
+    #for each lr fit, collect best values
+    lrs = []
+    best_losses = []
+    best_accs = []
+    best_r2s = []
+    
+    for key, fit in fit_dict.items():
+        lrs.append(fit['lr'])
+        
+        loss_ep = fit['best_loss_epoch']
+        acc_ep = fit['best_acc_epoch']
+        r2_ep = fit['best_r2_epoch']
+        
+        #these will all need to come from the same epoch during parameter selection
+        best_losses.append(fit['test_losses'][loss_ep])
+        best_accs.append(fit['test_accs'][acc_ep])
+        best_r2s.append(fit['test_r2s'][r2_ep])
+        
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize = (12, 6))
+    ax1.plot(lrs, best_losses, c = 'r')
+    ax1.scatter(lrs[best_losses.index(min(best_losses))], min(best_losses), s = 64, alpha = 0.8, c = 'turquoise')
+    ax1.set_xlabel('Learning Rates')
+    ax1.set_ylabel('Mean Squared Error Loss')
+    ax1.set_title(f'MSE Loss with lr')
+    
+    ax2.plot(lrs, best_accs, c = 'r')
+    ax2.scatter(lrs[best_accs.index(min(best_accs))], min(best_accs), s = 64, alpha = 0.8, c = 'turquoise')
+    ax2.set_xlabel('Learning Rates')
+    ax2.set_ylabel('Mean Absolute Percent Error')
+    ax2.set_title(f'MAPE with lr')
+    
+    ax3.plot(lrs, best_r2s, c = 'r')
+    ax3.scatter(lrs[best_r2s.index(max(best_r2s))], max(best_r2s), s = 64, alpha = 0.8, c = 'turquoise')
+    ax3.set_xlabel('Learning Rates')
+    ax3.set_ylabel('R$^2$')
+    ax3.set_title(f'R$^2$ with lr')
+    
+    plt.tight_layout()
+    plt.show()
