@@ -41,7 +41,7 @@ def load_s3_ims(bucket_name, filepath):
         
         if fl[-1] == 'x':
             obj1 = client.get_object(Bucket = bucket_name, Key = fl)
-            sample_labels = pd.read_excel(obj1['Body'])
+            sample_labels = pd.read_excel(obj1['Body'].read())
         else:
             pass
     

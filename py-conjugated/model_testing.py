@@ -223,7 +223,7 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
         jsc_epoch_loss = sum(jsc_loss_list)/total_count
         ff_epoch_loss = sum(ff_loss_list)/total_count
         
-        losses = [pce_epoch_loss, voc_epoch_loss, ff_epoch_loss]
+        losses = [pce_epoch_loss, voc_epoch_loss, jsc_epoch_loss, ff_epoch_loss]
         
         pce_epoch_acc = sum(pce_acc_list)/total_count
         voc_epoch_acc = sum(voc_acc_list)/total_count
