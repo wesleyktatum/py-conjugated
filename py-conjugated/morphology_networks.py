@@ -81,6 +81,8 @@ class OPV_m2py_NN(nn.Module):
         
 #         fc_nodes = int((im_x/4) * (im_y/4) * 64 * 2 channels) # 4 because there were 2 maxpool layers with 2x2 Kernals,
                                                                 # reducing the overall channel width & height by half each time
+    
+        self.fc_nodes = (256/8) * (256/8) * 64 * im_z
         
         self.layer1 = nn.Sequential(
             nn.Conv2d(im_z, 32, kernel_size = 5, stride = 1, padding = 4),
@@ -103,7 +105,7 @@ class OPV_m2py_NN(nn.Module):
         
         self.layer4 = nn.Sequential(
             nn.Dropout(),               #helps avoid over-fitting
-            nn.Linear(131072, 5000),
+            nn.Linear(self.fc_nodes, 5000), #fc_nodes = 131072 w/ z = 2, 524288 w/ z = 8
             nn.ReLU()
         )
         
