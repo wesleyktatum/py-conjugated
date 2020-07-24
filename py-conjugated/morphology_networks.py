@@ -73,14 +73,12 @@ class OPV_df_NN(nn.Module):
 
 class OPV_m2py_NN(nn.Module):
     """
-    expects m2py labels of size 256x256x2
+    expects m2py labels or images of size 256x256xz as a .npy file
     """
     
     def __init__(self, im_z):
         super(OPV_m2py_NN, self).__init__()
-           
-#         self.fc_nodes = int((256/8) * (256/8) * 64 * im_z)
-        
+                
         self.layer1 = nn.Sequential(
             nn.Conv2d(im_z, 32, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
