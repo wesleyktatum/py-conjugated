@@ -191,8 +191,10 @@ class OPV_ImDataset(torch.utils.data.Dataset):
     
     def convert_im_to_tensors(self, im):
         
+        x, y, z = im.shape
+        
         im_tensor = torch.from_numpy(im).float()
-        im_tensor = im_tensor.view(2, 256, 256)
+        im_tensor = im_tensor.view(z, x, y)
         
         return im_tensor
         
