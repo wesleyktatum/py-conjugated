@@ -688,6 +688,79 @@ def plot_OFET_parity(mu_labels, mu_out, r_labels, r_out,
     plt.show()
     
     
+def plot_fit_results(fit_dict):
+    lr = float(fit_dict['lr'])
+    best_loss_epoch = int(fit_dict['best_loss_epoch'])
+    best_acc_epoch = int(fit_dict['best_acc_epoch'])
+    best_r2_epoch = int(fit_dict['best_r2_epoch'])
+    
+    test_loss = [float(i) for i in fit_dict['test_losses']]
+    pce_loss = [float(i) for i in fit_dict['pce_loss']]
+    voc_loss = [float(i) for i in fit_dict['voc_loss']]
+    jsc_loss = [float(i) for i in fit_dict['jsc_loss']]
+    ff_loss = [float(i) for i in fit_dict['ff_loss']]
+    
+    test_acc = [float(i) for i in fit_dict['test_accs']]
+    pce_acc = [float(i) for i in fit_dict['pce_acc']]
+    voc_acc = [float(i) for i in fit_dict['voc_acc']]
+    jsc_acc = [float(i) for i in fit_dict['jsc_acc']]
+    ff_acc = [float(i) for i in fit_dict['ff_acc']]
+    
+    test_r2 = [float(i) for i in fit_dict['test_r2s']]
+    pce_r2 = [float(i) for i in fit_dict['pce_r2']]
+    voc_r2 = [float(i) for i in fit_dict['voc_r2']]
+    jsc_r2 = [float(i) for i in fit_dict['jsc_r2']]
+    ff_r2 = [float(i) for i in fit_dict['ff_r2']]
+    
+    train_pce_loss = [float(i) for i in fit_dict['train_pce_loss']]
+    train_voc_loss = [float(i) for i in fit_dict['train_voc_loss']]
+    train_jsc_loss = [float(i) for i in fit_dict['train_jsc_loss']]
+    train_ff_loss = [float(i) for i in fit_dict['train_ff_loss']]
+
+    epochs = np.arange(0, (len(test_loss)), 1)
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize = (12, 6))
+    ax1.plot(epochs, pce_loss, c = 'r', label = 'pce loss')
+    ax1.plot(epochs, voc_loss, c = 'g', label = 'voc loss')
+    ax1.plot(epochs, jsc_loss, c = 'b', label = 'jsc loss')
+    ax1.plot(epochs, ff_loss, c = 'c', label = 'ff loss')
+    ax1.plot(epochs, test_loss, c = 'k', label = 'total loss')
+    ax1.plot(epochs, train_pce_loss, c = 'r', linestyle = '-.', label = 'pce train loss')
+    ax1.plot(epochs, train_voc_loss, c = 'g', linestyle = '-.', label = 'voc train loss')
+    ax1.plot(epochs, train_jsc_loss, c = 'b', linestyle = '-.', label = 'jsc train loss')
+    ax1.plot(epochs, train_ff_loss, c = 'c', linestyle = '-.', label = 'ff train loss')
+    ax1.scatter(best_loss_epoch, min(test_loss), s = 64, c = 'c')
+    ax1.set_xlabel('Epochs')
+    ax1.set_ylabel('Mean Squared Error Loss')
+    ax1.legend(loc = 'best')
+    ax1.set_title(f'MSE Loss with lr = {lr}')
+
+    ax2.plot(epochs, pce_acc, c = 'r', label = 'pce acc')
+    ax2.plot(epochs, voc_acc, c = 'g', label = 'voc acc')
+    ax2.plot(epochs, jsc_acc, c = 'b', label = 'jsc acc')
+    ax2.plot(epochs, ff_acc, c = 'c', label = 'ff acc')
+    ax2.plot(epochs, test_acc, c = 'k', label = 'total acc')
+    ax2.scatter(best_acc_epoch, min(test_acc), s = 64, c = 'c')
+    ax2.set_xlabel('Epochs')
+    ax2.set_ylabel('Mean Absolute Percent Error')
+    ax2.legend(loc = 'best')
+    ax2.set_title(f'MAPE with lr = {lr}')
+
+    ax3.plot(epochs, pce_r2, c = 'r', label = 'pce R$^2$')
+    ax3.plot(epochs, voc_r2, c = 'g', label = 'voc R$^2$')
+    ax3.plot(epochs, jsc_r2, c = 'b', label = 'jsc R$^2$')
+    ax3.plot(epochs, ff_r2, c = 'c', label = 'ff R$^2$')
+    ax3.plot(epochs, test_r2, c = 'k', label = 'total R$^2$')
+    ax3.scatter(best_r2_epoch, max(test_r2), s = 64, c = 'c')
+    ax3.set_xlabel('Epochs')
+    ax3.set_ylabel('R$^2$')
+    ax3.legend(loc = 'best')
+    ax3.set_title(f'R$^2$ with lr = {lr}')
+    
+    plt.tight_layout()
+    plt.show()    
+    
+    
 def plot_best_fit_lrs(fit_dict):
     """
     A function that plots the best loss, accuracy, and r2 of a lr fit series. Note
