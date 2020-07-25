@@ -452,13 +452,18 @@ def relative_areas(dataframe):
 #######################################################
 
 def init_weights(model):
-    if type(model) == torch.nn.Linear:
+    classname = model.__class__.__name__
+    if classname.find('Linear') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
-        model.bias.data.fill_(0.01)
+        torch.nn.init.constant_(model.bias, 0.01)
         
-    if type(model) == torch.nn.Conv2d:
+    elif classname.find('Conv2d') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
-        model.bias.data.fill_(0.01)
+        torch.nn.init.constant_(model.bias, 0.01)
+        
+    elif classname.find('BatchNorm') != -1:
+        torch.nn.init.xavier_uniform_(model.weight)
+        torch.nn.init.constant_(model.bias, 0.01)
 
     
 
