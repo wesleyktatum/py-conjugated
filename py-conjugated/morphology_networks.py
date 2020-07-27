@@ -91,16 +91,16 @@ class OPV_m2py_NN(nn.Module):
             nn.MaxPool2d(kernel_size = 2, stride = 2)
         )
         
-        self.layer3 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size = 3, stride = 1, padding = 1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 2, stride = 2),
-            nn.Flatten()
-        )
+#         self.layer3 = nn.Sequential(
+#             nn.Conv2d(64, 128, kernel_size = 3, stride = 1, padding = 1),
+#             nn.ReLU(),
+#             nn.MaxPool2d(kernel_size = 2, stride = 2),
+#             nn.Flatten()
+#         )
         
         self.layer4 = nn.Sequential(
             nn.Dropout(),               #helps avoid over-fitting
-            nn.Linear(131072, 5000),
+            nn.Linear(262144, 5000),    # w/ 3 conv layers, input = 131072, w/ 2 conv layers, input = 262144
             nn.ReLU()
         )
         
@@ -132,7 +132,7 @@ class OPV_m2py_NN(nn.Module):
         #convolution series
         im_encoding = self.layer1(im)
         im_encoding = self.layer2(im_encoding)
-        im_encoding = self.layer3(im_encoding)
+#         im_encoding = self.layer3(im_encoding)
         
         #linear encoding
         im_encoding = self.layer4(im_encoding)
