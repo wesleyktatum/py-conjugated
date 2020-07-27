@@ -457,11 +457,11 @@ def init_weights(model):
     
     if classname.find('Linear') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.zeros(model.bias)
+        torch.nn.init.zeros_(model.bias)
         
     elif classname.find('Conv2d') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.zeros(model.bias)
+        torch.nn.init.zeros_(model.bias)
         
     elif classname.find('BatchNorm') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
