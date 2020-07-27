@@ -452,18 +452,20 @@ def relative_areas(dataframe):
 #######################################################
 
 def init_weights(model):
+    
     classname = model.__class__.__name__
+    
     if classname.find('Linear') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.constant_(model.bias, 0.01)
+        torch.nn.init.zeros(model.bias)
         
     elif classname.find('Conv2d') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.constant_(model.bias, 0.01)
+        torch.nn.init.zeros(model.bias)
         
     elif classname.find('BatchNorm') != -1:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.constant_(model.bias, 0.01)
+        torch.nn.init.zeros_(model.bias)
 
     
 
@@ -797,18 +799,21 @@ def plot_best_fit_lrs(fit_dict):
     ax1.set_xlabel('Learning Rates')
     ax1.set_ylabel('Mean Squared Error Loss')
     ax1.set_title(f'MSE Loss with lr')
+    ax1.set_yscale('log')
     
     ax2.plot(lrs, best_accs, c = 'r')
     ax2.scatter(lrs[best_accs.index(min(best_accs))], min(best_accs), s = 64, alpha = 0.8, c = 'turquoise')
     ax2.set_xlabel('Learning Rates')
     ax2.set_ylabel('Mean Absolute Percent Error')
     ax2.set_title(f'MAPE with lr')
+    ax2.set_yscale('log')
     
     ax3.plot(lrs, best_r2s, c = 'r')
     ax3.scatter(lrs[best_r2s.index(max(best_r2s))], max(best_r2s), s = 64, alpha = 0.8, c = 'turquoise')
     ax3.set_xlabel('Learning Rates')
     ax3.set_ylabel('R$^2$')
     ax3.set_title(f'R$^2$ with lr')
+    ax3.set_ylim(-500, 1)
     
     plt.tight_layout()
     plt.show()
