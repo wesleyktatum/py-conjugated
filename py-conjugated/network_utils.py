@@ -452,20 +452,22 @@ def relative_areas(dataframe):
 #######################################################
 
 def init_weights(model):
+    """
+    Through the torch module.apply() function, this initialization is
+    recursively passed to all submodules and layers in the model
+    """
     
-    classname = model.__class__.__name__
-    
-    if classname.find('Linear') != -1:
+    if type(model) == nn.Linear:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.zeros_(model.bias)
+        torch.nn.init.xavier_uniform_(model.bias)
         
-    elif classname.find('Conv2d') != -1:
+    if type(model) == nn.Conv2d:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.zeros_(model.bias)
+        torch.nn.init.xavier_uniform_(model.bias)
         
-    elif classname.find('BatchNorm') != -1:
+    if type(model) == nn.BatchNorm:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.zeros_(model.bias)
+        torch.nn.init.xavier_uniform_(model.bias)
 
     
 

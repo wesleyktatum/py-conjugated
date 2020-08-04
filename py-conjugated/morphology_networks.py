@@ -146,7 +146,53 @@ class OPV_m2py_NN(nn.Module):
         return pce_out, voc_out, jsc_out, ff_out, im_encoding
     
     
-    #define the neural network
+
+class OPV_mixed_NN(nn.Module):
+    """
+    This class calls two classes that are the data encoding branches whose
+    outputs are concatenated before being fed into the predictor
+    """
+    def __init__(self, im_z, in_dims, out_dims):
+        super(OPV_mixed_NN, self).__init__()
+        
+        self.image_branch = nn.Module(
+            
+        )
+        
+        self.df_branch = nn.Sequential(
+        
+        )
+        
+        self.pce_predictor = nn.Sequential(
+                
+        )
+        
+        self.voc_predictor = nn.Sequential(
+        
+        )
+        
+        self.jsc_predictor = nn.Sequential(
+        
+        )
+        
+        self.ff_predictor = nn.Sequential(
+        
+        )
+        
+    def forward(self, im, df):
+        im_encoding = self.image_branch(im)
+        df_encoding = self.df_branch(df)
+        
+        total_encoding = torch.cat(im_encoding, df_encoding)
+        
+        pce_out = self.pce_predictor(total_encoding)
+        voc_out = self.voc_predictor(total_encoding)
+        jsc_out = self.jsc_predictor(total_encoding)
+        ff_out = self.ff_predictor(total_encoding)
+        
+        return pce_out, voc_out, jsc_out, ff_out
+    
+
 class OFET_df_NN(nn.Module):
     
     def __init__(self, in_dims, out_dims):
