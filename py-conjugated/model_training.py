@@ -117,7 +117,7 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         
         # Run the forward pass   
         model.zero_grad()
-        pce_pred, voc_pred, jsc_pred, ff_pred, im_enc = model(images)
+        pce_pred, voc_pred, jsc_pred, ff_pred = model(images)
         
         pce_labels = labels[:,0].squeeze()
         voc_labels = labels[:,1].squeeze()

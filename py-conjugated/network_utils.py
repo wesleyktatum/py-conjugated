@@ -12,6 +12,7 @@ import torch
 import boto3
 import io
 from torch.utils.data import Dataset
+import torch.nn as nn
 
 #######################################################
 #                  Data Utilities    
@@ -459,15 +460,15 @@ def init_weights(model):
     
     if type(model) == nn.Linear:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.xavier_uniform_(model.bias)
+        torch.nn.init.uniform_(model.bias)
         
     if type(model) == nn.Conv2d:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.xavier_uniform_(model.bias)
+        torch.nn.init.uniform_(model.bias)
         
-    if type(model) == nn.BatchNorm:
+    if type(model) == nn.BatchNorm2d:
         torch.nn.init.xavier_uniform_(model.weight)
-        torch.nn.init.xavier_uniform_(model.bias)
+        torch.nn.init.uniform_(model.bias)
 
     
 

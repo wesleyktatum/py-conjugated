@@ -88,7 +88,8 @@ class OPV_m2py_NN(nn.Module):
         self.layer2 = nn.Sequential(
             nn.Conv2d(32, 64, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 2, stride = 2)
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Flatten()
         )
         
 #         self.layer3 = nn.Sequential(
@@ -143,7 +144,7 @@ class OPV_m2py_NN(nn.Module):
         jsc_out = self.pce_layer(im_encoding)
         ff_out = self.pce_layer(im_encoding)
         
-        return pce_out, voc_out, jsc_out, ff_out, im_encoding
+        return pce_out, voc_out, jsc_out, ff_out
     
     
 

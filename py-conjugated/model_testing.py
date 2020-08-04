@@ -176,7 +176,7 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
     #         labels = labels.to(device)
 
             # Run the forward pass
-            pce_pred, voc_pred, jsc_pred, ff_pred, im_enc = model(images)
+            pce_pred, voc_pred, jsc_pred, ff_pred = model(images)
 
             #calculate the loss
             pce_loss = criterion(pce_pred, labels[:,0])
