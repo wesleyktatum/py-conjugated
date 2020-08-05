@@ -155,28 +155,59 @@ class OPV_mixed_NN(nn.Module):
     def __init__(self, im_z, in_dims, out_dims):
         super(OPV_mixed_NN, self).__init__()
         
-        self.image_branch = nn.Module(
+        self.image_branch = nn.Sequential(
             
+            nn.Conv2d(im_z, 32, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+
+            nn.Conv2d(32, 64, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Flatten(),
+
+#             nn.Conv2d(64, 128, kernel_size = 3, stride = 1, padding = 1),
+#             nn.ReLU(),
+#             nn.MaxPool2d(kernel_size = 2, stride = 2),
+#             nn.Flatten(),
+
+            nn.Dropout(),
+                    
+            # w/ 3 conv layers, input = 131072, w/ 2 conv layers, input = 262144
+            nn.Linear(262144, 5000),    
+            nn.ReLU()
         )
         
         self.df_branch = nn.Sequential(
-        
+            nn.Linear(in_dims, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 500),
+            nn.ReLU(),
         )
         
+        #im_enc + df_enc = 5000 + 500 = 5500 fc nodes
         self.pce_predictor = nn.Sequential(
-                
+            nn.Linear(5500, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)       
         )
         
         self.voc_predictor = nn.Sequential(
-        
+            nn.Linear(5500, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
         )
         
         self.jsc_predictor = nn.Sequential(
-        
+            nn.Linear(5500, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
         )
         
         self.ff_predictor = nn.Sequential(
-        
+            nn.Linear(5500, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
         )
         
     def forward(self, im, df):
