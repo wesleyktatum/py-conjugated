@@ -95,38 +95,38 @@ class OPV_m2py_NN(nn.Module):
             nn.Conv2d(64, 64, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size = 2, stride = 2),
-            nn.Flatten()
+            nn.Flatten(),
+            nn.Dropout()               #helps avoid over-fitting
         )
         
         self.layer4 = nn.Sequential(
-            nn.Dropout(),               #helps avoid over-fitting
             nn.Linear(65536, 5000),    # w/ 3 conv layers, input = 131072, w/ 2 conv layers, input = 262144
             nn.ReLU()
         )
         
         self.pce_layer = nn.Sequential(
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(5000),
             nn.Linear(5000, 100),
             nn.ReLU(),
             nn.Linear(100, 1)
         )
         
         self.voc_layer = nn.Sequential(
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(5000),
             nn.Linear(5000, 100),
             nn.ReLU(),
             nn.Linear(100, 1)
         )
         
         self.jsc_layer = nn.Sequential(
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(5000),
             nn.Linear(5000, 100),
             nn.ReLU(),
             nn.Linear(100, 1)
         )
         
         self.ff_layer = nn.Sequential(
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(5000),
             nn.Linear(5000, 100),
             nn.ReLU(),
             nn.Linear(100, 1)
@@ -136,7 +136,7 @@ class OPV_m2py_NN(nn.Module):
         #convolution series
         im_encoding = self.layer1(im)
         im_encoding = self.layer2(im_encoding)
-#         im_encoding = self.layer3(im_encoding)
+        im_encoding = self.layer3(im_encoding)
         
         #linear encoding
         im_encoding = self.layer4(im_encoding)
@@ -147,7 +147,7 @@ class OPV_m2py_NN(nn.Module):
         jsc_out = self.pce_layer(im_encoding)
         ff_out = self.pce_layer(im_encoding)
         
-        return pce_out, voc_out, jsc_out, ff_out, im_encoding
+        return pce_out, voc_out, jsc_out, ff_out
     
     
 
