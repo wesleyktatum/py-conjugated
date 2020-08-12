@@ -43,6 +43,7 @@ def load_s3_ims(bucket_name, filepath):
     im_dict = {}
     label_dict = {}
     
+    #extract sample labels and props from xlsx file in s3 directory
     for i, obj in enumerate(files):
         #get filename
         fl = obj.key
@@ -53,72 +54,90 @@ def load_s3_ims(bucket_name, filepath):
         else:
             pass
     
-    #loop through each file, which is an m2py labelset
+    #loop through each file, and focus on those that are .npy files
     for i, obj in enumerate(files):
         #get filename
         fl = obj.key
         
-        #skip directories
-        if fl[-1] != '/':
-            #skip excel files
-            if fl[-1] != 'x':
+#         #skip directories
+#         if fl[-1] != '/':
+#             #skip excel files
+#             if fl[-1] != 'x':
                 #only .npy files
-                if fl[-1] == 'y':
-                    anl_temp = 0
-                    anl_time = 0
-                    sub = 0
-                    dev = 0
+        if fl[-1] == 'y':
+            anl_temp = 0
+            anl_time = 0
+            sub = 0
+            dev = 0
                     
-                    byte_stream = io.BytesIO(obj.get()['Body'].read())
+            byte_stream = io.BytesIO(obj.get()['Body'].read())
 
-                    im = np.load(byte_stream)
+            im = np.load(byte_stream)
 
-                    im_index = len(im_dict)
-                    im_dict[im_index] = im
+            im_index = len(im_dict)
+            im_dict[im_index] = im
 
-                    if 'postexam' in fl:
-                        #extract temp, time, sub, dev from filename
-                        temp_start_indx = fl.index('set/') + 4
-                        temp_stop_indx = fl.index('C')
-                        anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+            if 'postexam' in fl:
+                #extract temp, time, sub, dev from filename
+                temp_start_indx = fl.index('set/') + 4
+                temp_stop_indx = fl.index('C')
+                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
 
-                        time_start_indx = temp_stop_indx+2
-                        time_stop_indx = fl.index('min_')
-                        time_stop_indx = time_stop_indx
-                        anl_time = fl[time_start_indx:time_stop_indx]
-                        anl_time = int(anl_time)
+                time_start_indx = temp_stop_indx+2
+                time_stop_indx = fl.index('min_')
+                time_stop_indx = time_stop_indx
+                anl_time = fl[time_start_indx:time_stop_indx]
+                anl_time = int(anl_time)
 
-                        s_idx = fl.index('ub')+2
+                s_idx = fl.index('ub')+2
 
-                        sub = fl[s_idx]
-                        dev = 3
+                sub = fl[s_idx]
+                dev = 4
+                        
+            elif '90D' in fl:
+                #extract temp, time, sub, dev from filename
+                temp_start_indx = fl.index('set/') + 4
+                temp_stop_indx = fl.index('C')
+                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
 
-                    elif 'NOANNEAL' in fl:
-                        anl_temp = 0
-                        anl_time = 0
+                time_start_indx = temp_stop_indx+2
+                time_stop_indx = fl.index('min_')
+                time_stop_indx = time_stop_indx
+                anl_time = fl[time_start_indx:time_stop_indx]
+                anl_time = int(anl_time)
 
-                        #extract sub and dev
-                        s_idx = fl.index('S')+1
-                        d_idx = fl.index('D')+1
+                s_idx = fl.index('ub')+2
 
-                        sub = fl[s_idx]
-                        dev = fl[d_idx]
-                    else:
-                        #extract temp, time, sub, dev from filename
-                        temp_start_indx = fl.index('set/') + 4
-                        temp_stop_indx = fl.index('C')
-                        anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+                sub = fl[s_idx]
+                dev = 5
 
-                        time_start_indx = temp_stop_indx+2
-                        time_stop_indx = fl.index('min_')
-                        anl_time = fl[time_start_indx:time_stop_indx]
-                        anl_time = int(anl_time)
+            elif 'NOANNEAL' in fl:
+                anl_temp = 0
+                anl_time = 0
 
-                        s_idx = fl.index('ub')+2
-                        d_idx = fl.index('ev')+2
+                #extract sub and dev
+                s_idx = fl.index('S')+1
+                d_idx = fl.index('D')+1
 
-                        sub = fl[s_idx]
-                        dev = fl[d_idx]
+                sub = fl[s_idx]
+                dev = fl[d_idx]
+                        
+            else:
+                #extract temp, time, sub, dev from filename
+                temp_start_indx = fl.index('set/') + 4
+                temp_stop_indx = fl.index('C')
+                anl_temp = int(fl[temp_start_indx:temp_stop_indx])
+
+                time_start_indx = temp_stop_indx+2
+                time_stop_indx = fl.index('min_')
+                anl_time = fl[time_start_indx:time_stop_indx]
+                anl_time = int(anl_time)
+
+                s_idx = fl.index('ub')+2
+                d_idx = fl.index('ev')+2
+
+                sub = fl[s_idx]
+                dev = fl[d_idx]
 
             #assign entry identifiers to label key
             label_dict[i] = {'Anneal_time' : int(anl_time),
@@ -126,8 +145,8 @@ def load_s3_ims(bucket_name, filepath):
                              'Substrate' : int(sub),
                              'Device': int(dev),
                             }
-            
-    label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')    
+                        
+    label_df = pd.DataFrame.from_dict(label_dict, orient = 'index')   
 
     sample_indexs = []
     pce = []
@@ -136,7 +155,7 @@ def load_s3_ims(bucket_name, filepath):
     ff = []
     indxs = []
     for i, row in label_df.iterrows():
- 
+        
         #query for sample labels that = test set identifiers
         time_matches = sample_labels[sample_labels['Anneal_time'] == row[0]]
         temp_matches = time_matches.query('Anneal_temp == @row[1]')
@@ -846,20 +865,29 @@ def get_fold_dataloaders_df(x_train, y_train, train_index, test_index):
 
 
 def get_fold_dataloaders_im_s3(im_dict, label_df, train_index, test_index):
-    x_trn = im_dict[train_index]
+    
+    x_trn = {}
+    for index in train_index:
+        im = im_dict[index]
+        x_trn[index] = torch.from_numpy(im)
+        
     pce_trn = label_df['PCE'].iloc[train_index]
-    voc_trn = label_df['VocL'].iloc[train_index]
+    voc_trn = label_df['Vocl'].iloc[train_index]
     jsc_trn = label_df['Jsc'].iloc[train_index]
     ff_trn = label_df['FF'].iloc[train_index]
 
-    x_tst = im_dict[test_index]
+    x_tst = {}
+    for index in test_index:
+        im = im_dict[index]
+        x_tst[index] = torch.from_numpy(im)
+        
     pce_tst = label_df['PCE'].iloc[test_index]
-    voc_tst = label_df['VocL'].iloc[test_index]
+    voc_tst = label_df['Vocl'].iloc[test_index]
     jsc_tst = label_df['Jsc'].iloc[test_index]
     ff_tst = label_df['FF'].iloc[test_index]
 
-    x_trn = torch.tensor(x_trn.values.astype(np.float32))
-    x_tst = torch.tensor(x_tst.values.astype(np.float32))
+#     x_trn = torch.tensor(x_trn.values.astype(np.float32))
+#     x_tst = torch.tensor(x_tst.values.astype(np.float32))
     pce_trn = torch.tensor(pce_trn.values.astype(np.float32))
     pce_tst = torch.tensor(pce_tst.values.astype(np.float32))
     voc_trn = torch.tensor(voc_trn.values.astype(np.float32))
