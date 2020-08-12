@@ -35,8 +35,8 @@ class OPV_df_NN(nn.Module):
         self.Voc_branch = nn.Sequential(
             nn.Dropout(p = 0.1),
             nn.Linear(500, 16),
-            nn.BatchNorm1d(16),
             nn.ReLU(),
+            nn.BatchNorm1d(16),
             nn.Linear(16, 1),
             nn.ReLU()
         )

@@ -55,7 +55,7 @@ def train_OPV_df_model(model, training_data_set, optimizer):
         voc_labels = voc_labels.to(device)
         jsc_labels = jsc_labels.to(device)
         ff_labels = ff_labels.to(device)
-        
+                
         model.zero_grad() #zero out any gradients from prior loops
         
         #gather model predictions for this loop
