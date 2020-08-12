@@ -338,6 +338,62 @@ class local_OPV_ImDataset(torch.utils.data.Dataset):
         
         return label_tensor
     
+    
+class OPV_CV_im_dataset(torch.utils.data.Dataset):
+    """
+    This class takes in an image dictionary for training and labels as a pandas dataframe
+    to initialize a custom dataset class that inherets from PyTorch. 
+    
+    Assumes that only parts of im_dict will be used, as specified by 'index'. Meant for use
+    with k-fold cross-validation functions.
+    """
+    def __init__(self, im_dict, label_df, index):
+        super(OPV_ImDataset).__init__()
+        self.im_dict = {}
+        self.label_df = label_df
+        self.index = index
+        
+        new_indx = 0
+        for key, value in im_dict.items():
+            if key is in index:
+                self.im_dict[new_indx] = im_dict[key]
+                new_indx += 1
+            else:
+                pass
+            
+
+    def __len__(self):
+        return len(self.im_dict)
+
+    
+    def __getitem__(self, key):
+        
+        im = self.im_dict[key]
+        self.im_tensor = self.convert_im_to_tensors(im)
+        
+        label_df = self.im_labels.iloc[key]
+        label_df = label_df.drop(['Anneal_time', 'Anneal_temp', 'Substrate', 'Device'])
+        self.label_tensor = self.convert_label_to_tensors(label_df)
+        
+        return self.im_tensor, self.label_tensor
+    
+    
+    def convert_im_to_tensors(self, im):
+        
+        x, y, z = im.shape
+        
+        im_tensor = torch.from_numpy(im).float()
+        im_tensor = im_tensor.view(z, x, y)
+        
+        return im_tensor
+        
+        
+    def convert_label_to_tensors(self, label_df):
+        label_tensor =  torch.tensor(label_df).float()
+        label_tensor.view(-1,1)
+        
+        return label_tensor
+    
 
 def load_trained_model(previous_model, model, optimizer):
     
