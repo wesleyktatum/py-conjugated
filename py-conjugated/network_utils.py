@@ -704,6 +704,111 @@ def CV_OPV_fit(model, train_loader, test_loader, lr, epochs):
 
     return fit_results
 
+def CV_OPV_CNN_fit(model, train_loader, test_loader, criterion, lr, epochs):
+    """
+    This function takes in a model and hyperparameters and performs a single
+    fit for a fold of data in k-fold cross-validation. This function returns
+    only the results and losses as a dictionary
+    """
+    #define the optimizer
+    optimizer = torch.optim.Adam(params = model.parameters(), lr = lr)
+        
+    #empty list to hold loss per epoch
+    train_epoch_losses = []
+    pce_train_epoch_losses = []
+    voc_train_epoch_losses = []
+    jsc_train_epoch_losses = []
+    ff_train_epoch_losses = []
+
+    test_epoch_losses = []
+    pce_test_epoch_losses = []
+    voc_test_epoch_losses = []
+    jsc_test_epoch_losses = []
+    ff_test_epoch_losses = []
+
+    pce_test_epoch_accuracies = []
+    voc_test_epoch_accuracies = []
+    jsc_test_epoch_accuracies = []
+    ff_test_epoch_accuracies = []
+    test_epoch_accuracies = []
+
+    pce_test_epoch_r2 = []
+    voc_test_epoch_r2 = []
+    jsc_test_epoch_r2 = []
+    ff_test_epoch_r2 = []
+    test_epoch_r2s = []
+
+    for epoch in range(epochs):
+        print('On epoch ', epoch)
+
+        model, train_loss, pce_train_loss, voc_train_loss, jsc_train_loss, ff_train_loss = train.train_OPV_m2py_model(model = model, training_data_set = train_loader, criterion = criterion, optimizer = optimizer)
+        train_epoch_losses.append(train_loss)
+        pce_train_epoch_losses.append(pce_train_loss)
+        voc_train_epoch_losses.append(voc_train_loss)
+        jsc_train_epoch_losses.append(jsc_train_loss)
+        ff_train_epoch_losses.append(ff_train_loss)
+
+        test_losses, test_accs, test_r2s = test.eval_OPV_m2py_model(model = model,
+                                                                   testing_data_set = test_loader,
+                                                                   criterion = criterion)
+        pce_test_epoch_losses.append(test_losses[0])
+        voc_test_epoch_losses.append(test_losses[1])
+        jsc_test_epoch_losses.append(test_losses[2])
+        ff_test_epoch_losses.append(test_losses[3])
+
+        tot_tst_loss = sum(test_losses)
+        test_epoch_losses.append(tot_tst_loss)
+
+        pce_test_epoch_accuracies.append(test_accs[0])
+        voc_test_epoch_accuracies.append(test_accs[1])
+        jsc_test_epoch_accuracies.append(test_accs[2])
+        ff_test_epoch_accuracies.append(test_accs[3])
+
+        tot_tst_acc = sum(test_accs)
+        test_epoch_accuracies.append(tot_tst_acc)
+
+        pce_test_epoch_r2.append(test_r2s[0])
+        voc_test_epoch_r2.append(test_r2s[1])
+        jsc_test_epoch_r2.append(test_r2s[2])
+        ff_test_epoch_r2.append(test_r2s[3])
+
+        tot_tst_r2 = sum(test_r2s)
+        test_epoch_r2s.append(tot_tst_r2)
+        
+        print('Finished epoch ', epoch)
+        
+    best_loss_indx = test_epoch_losses.index(min(test_epoch_losses))
+    best_acc_indx = test_epoch_accuracies.index(min(test_epoch_accuracies))
+    best_r2_indx = test_epoch_r2s.index(max(test_epoch_r2s))
+    
+    fit_results = {
+        'lr': lr,
+        'best_loss_epoch': best_loss_indx,
+        'best_acc_epoch': best_acc_indx,
+        'best_r2_epoch': best_r2_indx,
+        'pce_loss': pce_test_epoch_losses,
+        'voc_loss': voc_test_epoch_losses,
+        'jsc_loss': jsc_test_epoch_losses,
+        'ff_loss': ff_test_epoch_losses,
+        'test_losses': test_epoch_losses,        
+        'pce_acc': pce_test_epoch_accuracies,
+        'voc_acc': voc_test_epoch_accuracies,
+        'jsc_acc': jsc_test_epoch_accuracies,
+        'ff_acc': ff_test_epoch_accuracies,
+        'test_accs': test_epoch_accuracies,
+        'pce_r2': pce_test_epoch_r2,
+        'voc_r2': voc_test_epoch_r2,
+        'jsc_r2': jsc_test_epoch_r2,
+        'ff_r2': ff_test_epoch_r2,
+        'test_r2s': test_epoch_r2s,
+        'train_pce_loss': pce_train_epoch_losses,
+        'train_voc_loss': voc_train_epoch_losses,
+        'train_jsc_loss': jsc_train_epoch_losses,
+        'train_ff_loss': ff_train_epoch_losses
+    }
+
+    return fit_results
+
 
 def get_fold_dataloaders_df(x_train, y_train, train_index, test_index):
     X_trn = x_train.iloc[train_index]
@@ -738,6 +843,40 @@ def get_fold_dataloaders_df(x_train, y_train, train_index, test_index):
     test_loader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size = test_batch)
     
     return train_loader, test_loader
+
+
+def get_fold_dataloaders_im_s3(im_dict, label_df, train_index, test_index):
+    x_trn = im_dict[train_index]
+    pce_trn = label_df['PCE'].iloc[train_index]
+    voc_trn = label_df['VocL'].iloc[train_index]
+    jsc_trn = label_df['Jsc'].iloc[train_index]
+    ff_trn = label_df['FF'].iloc[train_index]
+
+    x_tst = im_dict[test_index]
+    pce_tst = label_df['PCE'].iloc[test_index]
+    voc_tst = label_df['VocL'].iloc[test_index]
+    jsc_tst = label_df['Jsc'].iloc[test_index]
+    ff_tst = label_df['FF'].iloc[test_index]
+
+    x_trn = torch.tensor(x_trn.values.astype(np.float32))
+    x_tst = torch.tensor(x_tst.values.astype(np.float32))
+    pce_trn = torch.tensor(pce_trn.values.astype(np.float32))
+    pce_tst = torch.tensor(pce_tst.values.astype(np.float32))
+    voc_trn = torch.tensor(voc_trn.values.astype(np.float32))
+    voc_tst = torch.tensor(voc_tst.values.astype(np.float32))
+    jsc_trn = torch.tensor(jsc_trn.values.astype(np.float32))
+    jsc_tst = torch.tensor(jsc_tst.values.astype(np.float32))
+    ff_trn = torch.tensor(ff_trn.values.astype(np.float32))
+    ff_tst = torch.tensor(ff_tst.values.astype(np.float32))
+
+    train_dataset = torch.utils.data.TensorDataset(x_trn, pce_trn, voc_trn, jsc_trn, ff_trn)
+    test_dataset = torch.utils.data.TensorDataset(x_tst, pce_tst, voc_tst, jsc_tst, ff_tst)
+
+    train_loader = torch.utils.data.DataLoader(dataset = train_dataset)
+    test_loader = torch.utils.data.DataLoader(dataset = test_dataset)
+
+    return train_loader, test_loader
+
 
 #######################################################
 #                  Plotting Utilities
