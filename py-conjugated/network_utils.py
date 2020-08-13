@@ -355,7 +355,7 @@ class OPV_CV_im_dataset(torch.utils.data.Dataset):
         
         new_indx = 0
         for key, value in im_dict.items():
-            if key is in index:
+            if key in index:
                 self.im_dict[new_indx] = im_dict[key]
                 new_indx += 1
             else:
@@ -371,7 +371,7 @@ class OPV_CV_im_dataset(torch.utils.data.Dataset):
         im = self.im_dict[key]
         self.im_tensor = self.convert_im_to_tensors(im)
         
-        label_df = self.im_labels.iloc[key]
+        label_df = self.label_df.iloc[key]
         label_df = label_df.drop(['Anneal_time', 'Anneal_temp', 'Substrate', 'Device'])
         self.label_tensor = self.convert_label_to_tensors(label_df)
         
@@ -814,9 +814,9 @@ def CV_OPV_CNN_fit(model, train_loader, test_loader, criterion, lr, epochs):
     test_epoch_r2s = []
 
     for epoch in range(epochs):
-        print('On epoch ', epoch)
-
-        model, train_loss, pce_train_loss, voc_train_loss, jsc_train_loss, ff_train_loss = train.train_OPV_m2py_model(model = model, training_data_set = train_loader, criterion = criterion, optimizer = optimizer)
+        [pce_train_loss, voc_train_loss, jsc_train_loss, ff_train_loss] = train.train_OPV_m2py_model(model = model, training_data_set = train_loader, criterion = criterion, optimizer = optimizer)
+        
+        train_loss = pce_train_loss + voc_train_loss + jsc_train_loss + ff_train_loss
         train_epoch_losses.append(train_loss)
         pce_train_epoch_losses.append(pce_train_loss)
         voc_train_epoch_losses.append(voc_train_loss)
@@ -824,7 +824,7 @@ def CV_OPV_CNN_fit(model, train_loader, test_loader, criterion, lr, epochs):
         ff_train_epoch_losses.append(ff_train_loss)
 
         test_losses, test_accs, test_r2s = test.eval_OPV_m2py_model(model = model,
-                                                                   testing_data_set = test_loader,
+                                                                   test_data_set = test_loader,
                                                                    criterion = criterion)
         pce_test_epoch_losses.append(test_losses[0])
         voc_test_epoch_losses.append(test_losses[1])

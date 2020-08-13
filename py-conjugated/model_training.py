@@ -111,7 +111,7 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     batch_iterator = 0
     for images, labels in training_data_set:
         batch_iterator+=1
-        print(f'training batch # {batch_iterator}')
+#         print(f'training batch # {batch_iterator}')
 #         images = images.to(device)
 #         labels = labels.to(device)
         
