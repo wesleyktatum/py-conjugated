@@ -786,7 +786,10 @@ def CV_OPV_CNN_fit(model, train_loader, test_loader, criterion, lr, epochs):
     only the results and losses as a dictionary
     """
     #define the optimizer
-    optimizer = torch.optim.Adam(params = model.parameters(), lr = lr)
+    #amsgrad switches b/w L2 reg and weight decay variants of AdamW
+    optimizer = torch.optim.AdamW(params = model.parameters(),
+                                  lr = lr,
+                                  amsgrad = True)
         
     #empty list to hold loss per epoch
     train_epoch_losses = []
