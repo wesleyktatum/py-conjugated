@@ -131,7 +131,7 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
         ff_loss = criterion(ff_pred, ff_labels)
         
         total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
-        
+                
         #BACKPROPOGATE LIKE A MF
         torch.autograd.backward([pce_loss, voc_loss, jsc_loss, ff_loss])
         optimizer.step()
