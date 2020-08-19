@@ -29,10 +29,10 @@ def eval_OPV_df_model(model, testing_data_set):
 #     jsc_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.2)
 #     ff_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.2)
     
-    pce_criterion = nn.MSELoss()
-    voc_criterion = nn.MSELoss()
-    jsc_criterion = nn.MSELoss()
-    ff_criterion = nn.MSELoss()
+    pce_criterion = nn.SmoothL1Loss()
+    voc_criterion = nn.SmoothL1Loss()
+    jsc_criterion = nn.SmoothL1Loss()
+    ff_criterion = nn.SmoothL1Loss()
     
     accuracy = pilf.MAPE()
 #     accuracy = nn.L1Loss()

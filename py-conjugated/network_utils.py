@@ -682,7 +682,9 @@ def CV_OPV_fit(model, train_loader, test_loader, lr, epochs):
     only the results and losses as a dictionary
     """
     #define the optimizer
-    optimizer = torch.optim.Adam(params = model.parameters(), lr = lr)
+    optimizer = torch.optim.AdamW(params = model.parameters(),
+                                  lr = lr,
+                                  amsgrad = False)
         
     #empty list to hold loss per epoch
     train_epoch_losses = []
@@ -747,9 +749,9 @@ def CV_OPV_fit(model, train_loader, test_loader, lr, epochs):
         
         print('Finished epoch ', epoch)
         
-    best_loss_indx = test_epoch_losses.index(min(test_epoch_losses))
-    best_acc_indx = test_epoch_accuracies.index(min(test_epoch_accuracies))
-    best_r2_indx = test_epoch_r2s.index(max(test_epoch_r2s))
+    best_loss_indx = test_epoch_losses.index(min(test_epoch_losses[:100]))
+    best_acc_indx = test_epoch_accuracies.index(min(test_epoch_accuracies[:100]))
+    best_r2_indx = test_epoch_r2s.index(max(test_epoch_r2s[:100]))
     
     fit_results = {
         'lr': lr,

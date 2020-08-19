@@ -116,7 +116,10 @@ class MAPE(nn.Module):
             for x, y in zip(predictions, labels):
                 count += 1
                 
-                if x == 0.0:
+                if y == torch.tensor(0) and x == torch.tensor(0):
+                    ape = y
+                
+                elif x == 0.0 and y != 0.0:
                     #error
                     error = torch.neg(y)
                     #absolute error
@@ -124,7 +127,7 @@ class MAPE(nn.Module):
                     #absolute percent error
                     ape = torch.div(ae, y)
                     
-                elif y == 0.0:
+                elif y == 0.0 and x != 0.0:
                     error = x
                     y = x * 0.001
                     ae =torch.abs(error)

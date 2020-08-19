@@ -43,10 +43,10 @@ def train_OPV_df_model(model, training_data_set, optimizer):
 #     jsc_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
 #     ff_criterion = pilf.ThresholdedMSELoss(lower = 0, upper = 1.5)
 
-    pce_criterion = nn.MSELoss()
-    voc_criterion = nn.MSELoss()
-    jsc_criterion = nn.MSELoss()
-    ff_criterion = nn.MSELoss()
+    pce_criterion = nn.SmoothL1Loss()
+    voc_criterion = nn.SmoothL1Loss()
+    jsc_criterion = nn.SmoothL1Loss()
+    ff_criterion = nn.SmoothL1Loss()
     
     for train_data, pce_labels, voc_labels, jsc_labels, ff_labels in training_data_set:
         
