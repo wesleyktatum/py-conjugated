@@ -550,8 +550,8 @@ def init_weights(model):
         torch.nn.init.xavier_uniform_(model.weight)
         torch.nn.init.uniform_(model.bias)
         
-        if type(model) == nn.BatchNorm1d:
-        torch.nn.init.xavier_uniform_(model.weight)
+    if type(model) == nn.BatchNorm1d:
+        torch.nn.init.uniform_(model.weight) #can't use Xavier b/c of fan-in/out
         torch.nn.init.uniform_(model.bias)
         
         
