@@ -550,6 +550,10 @@ def init_weights(model):
         torch.nn.init.xavier_uniform_(model.weight)
         torch.nn.init.uniform_(model.bias)
         
+        if type(model) == nn.BatchNorm1d:
+        torch.nn.init.xavier_uniform_(model.weight)
+        torch.nn.init.uniform_(model.bias)
+        
         
 def OPV_fit(model, lr, epochs):
     """
