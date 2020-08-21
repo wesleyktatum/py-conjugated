@@ -153,72 +153,102 @@ class OPV_m2py_NN(nn.Module):
 
 class OPV_mixed_NN(nn.Module):
     """
-    This class calls two classes that are the data encoding branches whose
-    outputs are concatenated before being fed into the predictor
+    This class calls three classes that are the data encoding branches whose
+    outputs are concatenated before being fed into the predictor.
+    
+    Branch one is for the raw afm data (8x256x256)
+    Branch two is for the m2py labels (2x256x256)
+    Branch three is for the tabular data (batchsize x in_dims)
     """
-    def __init__(self, im_z, in_dims, out_dims):
+    def __init__(self, in_dims):
         super(OPV_mixed_NN, self).__init__()
         
-        self.image_branch = nn.Sequential(
-            
-            nn.Conv2d(im_z, 32, kernel_size = 3, stride = 1, padding = 1),
+        self.afm_branch = nn.Sequential(
+            nn.Conv2d(8, 32, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size = 2, stride = 2),
-
             nn.Conv2d(32, 64, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Conv2d(64, 64, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
             nn.Flatten(),
-
-#             nn.Conv2d(64, 128, kernel_size = 3, stride = 1, padding = 1),
-#             nn.ReLU(),
-#             nn.MaxPool2d(kernel_size = 2, stride = 2),
-#             nn.Flatten(),
-
             nn.Dropout(),
-                    
-            # w/ 3 conv layers, input = 131072, w/ 2 conv layers, input = 262144
-            nn.Linear(262144, 5000),    
+            nn.Linear(65536, 5000),
             nn.ReLU()
         )
         
-        self.df_branch = nn.Sequential(
+        self.m2py_branch = nn.Sequential(
+            nn.Conv2d(2, 32, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Conv2d(32, 64, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Conv2d(64, 64, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Flatten(),
+            nn.Dropout(),
+            nn.Linear(65536, 5000),
+            nn.ReLU()
+        )
+        
+        self.tab_branch = nn.Sequential(
             nn.Linear(in_dims, 1000),
             nn.ReLU(),
             nn.Linear(1000, 500),
-            nn.ReLU(),
+            nn.ReLU()
         )
         
-        #im_enc + df_enc = 5000 + 500 = 5500 fc nodes
+        #afm_enc + m2py_enc + df_enc = 5000 + 5000 + 500 = 10500 fc nodes
         self.pce_predictor = nn.Sequential(
-            nn.Linear(5500, 100),
+            nn.Linear(10500, 5000),
             nn.ReLU(),
-            nn.Linear(100, 1)       
+            nn.Linear(5000, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
         )
         
         self.voc_predictor = nn.Sequential(
-            nn.Linear(5500, 100),
+            nn.Linear(10500, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 100),
             nn.ReLU(),
             nn.Linear(100, 1)
         )
         
         self.jsc_predictor = nn.Sequential(
-            nn.Linear(5500, 100),
+            nn.Linear(10500, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 100),
             nn.ReLU(),
             nn.Linear(100, 1)
         )
         
         self.ff_predictor = nn.Sequential(
-            nn.Linear(5500, 100),
+            nn.Linear(10500, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 100),
             nn.ReLU(),
             nn.Linear(100, 1)
         )
         
-    def forward(self, im, df):
-        im_encoding = self.image_branch(im)
-        df_encoding = self.df_branch(df)
+    def forward(self, afm, m2py, df):
+        afm_encoding = self.afm_branch(afm)
+        m2py_encoding = self.m2py_branch(m2py)
+        df_encoding = self.tab_branch(df)
         
-        total_encoding = torch.cat(im_encoding, df_encoding)
+        total_encoding = torch.cat([afm_encoding, m2py_encoding, df_encoding])
         
         pce_out = self.pce_predictor(total_encoding)
         voc_out = self.voc_predictor(total_encoding)
