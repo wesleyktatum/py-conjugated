@@ -151,7 +151,7 @@ class OPV_m2py_NN(nn.Module):
     
     
 
-class OPV_mixed_NN(nn.Module):
+class OPV_total_NN(nn.Module):
     """
     This class calls three classes that are the data encoding branches whose
     outputs are concatenated before being fed into the predictor.
@@ -161,7 +161,7 @@ class OPV_mixed_NN(nn.Module):
     Branch three is for the tabular data (batchsize x in_dims)
     """
     def __init__(self, in_dims):
-        super(OPV_mixed_NN, self).__init__()
+        super(OPV_total_NN, self).__init__()
         
         self.afm_branch = nn.Sequential(
             nn.Conv2d(8, 32, kernel_size = 3, stride = 1, padding = 1),
@@ -202,53 +202,56 @@ class OPV_mixed_NN(nn.Module):
             nn.ReLU()
         )
         
-        #afm_enc + m2py_enc + df_enc = 5000 + 5000 + 500 = 10500 fc nodes
         self.pce_predictor = nn.Sequential(
-            nn.Linear(10500, 5000),
+            nn.Linear(294000, 50000),
             nn.ReLU(),
-            nn.Linear(5000, 1000),
+            nn.Linear(50000, 5000),
             nn.ReLU(),
-            nn.Linear(1000, 100),
+            nn.Linear(5000, 500),
             nn.ReLU(),
-            nn.Linear(100, 1)
+            nn.Linear(500, 1)
         )
         
         self.voc_predictor = nn.Sequential(
-            nn.Linear(10500, 5000),
+            nn.Linear(294000, 50000),
             nn.ReLU(),
-            nn.Linear(5000, 1000),
+            nn.Linear(50000, 5000),
             nn.ReLU(),
-            nn.Linear(1000, 100),
+            nn.Linear(5000, 500),
             nn.ReLU(),
-            nn.Linear(100, 1)
+            nn.Linear(500, 1)
         )
         
         self.jsc_predictor = nn.Sequential(
-            nn.Linear(10500, 5000),
+            nn.Linear(294000, 50000),
             nn.ReLU(),
-            nn.Linear(5000, 1000),
+            nn.Linear(50000, 5000),
             nn.ReLU(),
-            nn.Linear(1000, 100),
+            nn.Linear(5000, 500),
             nn.ReLU(),
-            nn.Linear(100, 1)
+            nn.Linear(500, 1)
         )
         
         self.ff_predictor = nn.Sequential(
-            nn.Linear(10500, 5000),
+            nn.Linear(294000, 50000),
             nn.ReLU(),
-            nn.Linear(5000, 1000),
+            nn.Linear(50000, 5000),
             nn.ReLU(),
-            nn.Linear(1000, 100),
+            nn.Linear(5000, 500),
             nn.ReLU(),
-            nn.Linear(100, 1)
+            nn.Linear(500, 1)
         )
         
     def forward(self, afm, m2py, df):
-        afm_encoding = self.afm_branch(afm)
-        m2py_encoding = self.m2py_branch(m2py)
-        df_encoding = self.tab_branch(df)
+        afm_enc = self.afm_branch(afm)
+        m2py_enc = self.m2py_branch(m2py)
+        df_enc = self.tab_branch(df)
         
-        total_encoding = torch.cat([afm_encoding, m2py_encoding, df_encoding])
+        afm_enc = afm_enc.view(-1)
+        m2py_enc = m2py_enc.view(-1)
+        df_enc = df_enc.view(-1)
+        
+        total_encoding = torch.cat([afm_enc, m2py_enc, df_enc])
         
         pce_out = self.pce_predictor(total_encoding)
         voc_out = self.voc_predictor(total_encoding)
