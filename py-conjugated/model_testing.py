@@ -243,6 +243,106 @@ def eval_OPV_m2py_model(model, test_data_set, criterion):
     return losses, accs, r2s
 
 
+def eval_OPV_mixed_model(model, test_data_set, criterion):
+    
+#     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    
+    #evaluate the model
+    model.eval()
+
+    #don't update nodes during evaluation b/c not training
+    with torch.no_grad():
+        total_step = len(test_data_set)
+        
+        pce_loss_list = []
+        voc_loss_list = []
+        jsc_loss_list = []
+        voc_loss_list = []
+        ff_loss_list = []
+        total_loss_list = []
+        
+        pce_acc_list = []
+        voc_acc_list = []
+        jsc_acc_list = []
+        ff_acc_list = []
+        total_acc_list = []
+        
+        pce_r2_list = []
+        voc_r2_list = []
+        jsc_r2_list = []
+        ff_r2_list = []
+        total_r2_list = []
+        
+        for ims, dfs, labels in test_data_set:
+
+            # Run the forward pass
+            pce_pred, voc_pred, jsc_pred, ff_pred = model(ims, dfs)
+
+            #calculate the loss
+            pce_loss = criterion(pce_pred, labels[:,0])
+            voc_loss = criterion(voc_pred, labels[:,1])
+            jsc_loss = criterion(jsc_pred, labels[:,2])
+            ff_loss = criterion(ff_pred, labels[:,3])
+
+            #gather the loss
+            pce_loss_list.append(pce_loss.item())
+            voc_loss_list.append(voc_loss.item())
+            jsc_loss_list.append(jsc_loss.item())
+            voc_loss_list.append(ff_loss.item())
+            
+            #calculate the accs
+            acc = pilf.MAPE()
+
+            pce_acc = acc(pce_pred, labels[:,0])
+            voc_acc = acc(voc_pred, labels[:,1])
+            jsc_acc = acc(jsc_pred, labels[:,2])
+            ff_acc = acc(ff_pred, labels[:,3])
+            
+            #gather the accs
+            pce_acc_list.append(pce_acc.item())
+            voc_acc_list.append(voc_acc.item())
+            jsc_acc_list.append(jsc_acc.item())
+            ff_acc_list.append(ff_acc.item())
+            
+            #calculate the r2s
+            pce_r2 = r2_score(labels[:,0].data.numpy(), pce_pred.data.numpy())
+            voc_r2 = r2_score(labels[:,1].data.numpy(), voc_pred.data.numpy())
+            jsc_r2 = r2_score(labels[:,2].data.numpy(), jsc_pred.data.numpy())
+            ff_r2 = r2_score(labels[:,3].data.numpy(), ff_pred.data.numpy())
+            
+            #gather the r2s
+            pce_r2_list.append(pce_r2)
+            voc_r2_list.append(voc_r2)
+            jsc_r2_list.append(jsc_r2)
+            ff_r2_list.append(ff_r2)
+
+        total_count = len(pce_loss_list)
+        
+        pce_epoch_loss = sum(pce_loss_list)/total_count
+        voc_epoch_loss = sum(voc_loss_list)/total_count
+        jsc_epoch_loss = sum(jsc_loss_list)/total_count
+        ff_epoch_loss = sum(ff_loss_list)/total_count
+        
+        losses = [pce_epoch_loss, voc_epoch_loss, jsc_epoch_loss, ff_epoch_loss]
+        
+        pce_epoch_acc = sum(pce_acc_list)/total_count
+        voc_epoch_acc = sum(voc_acc_list)/total_count
+        jsc_epoch_acc = sum(jsc_acc_list)/total_count
+        ff_epoch_acc = sum(ff_acc_list)/total_count
+        
+        accs = [pce_epoch_acc, voc_epoch_acc, jsc_epoch_acc, ff_epoch_acc]
+        
+        pce_epoch_r2 = sum(pce_r2_list)/total_count
+        voc_epoch_r2 = sum(voc_r2_list)/total_count
+        jsc_epoch_r2 = sum(jsc_r2_list)/total_count
+        ff_epoch_r2 = sum(ff_r2_list)/total_count
+        
+        r2s = [pce_epoch_r2, voc_epoch_r2, jsc_epoch_r2, ff_epoch_r2]
+
+
+    return losses, accs, r2s
+
+
 def eval_OPV_total_model(model, test_data_set, criterion):
     
 #     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')

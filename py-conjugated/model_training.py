@@ -152,6 +152,59 @@ def train_OPV_m2py_model(model, training_data_set, criterion, optimizer):
     return [pce_epoch_loss, voc_epoch_loss, jsc_epoch_loss, ff_epoch_loss]
 
 
+def train_OPV_mixed_model(model, training_data_set, criterion, optimizer):
+    
+#     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    
+    total_step = len(training_data_set)
+    pce_loss_list = []
+    voc_loss_list = []
+    jsc_loss_list = []
+    voc_loss_list = []
+    ff_loss_list = []
+    total_loss_list = []
+    
+    model.train()
+    
+    for ims, dfs, labels in training_data_set:
+        
+        # Run the forward pass   
+        model.zero_grad()
+        pce_pred, voc_pred, jsc_pred, ff_pred = model(ims, dfs)
+        
+        pce_labels = labels[:,0].squeeze()
+        voc_labels = labels[:,1].squeeze()
+        jsc_labels = labels[:,2].squeeze()
+        ff_labels = labels[:,3].squeeze()
+        
+        #Gather the loss
+        pce_loss = criterion(pce_pred, pce_labels)
+        voc_loss = criterion(voc_pred, voc_labels)
+        jsc_loss = criterion(jsc_pred, jsc_labels)
+        ff_loss = criterion(ff_pred, ff_labels)
+        
+        total_loss = pce_loss + voc_loss + jsc_loss + ff_loss
+                
+        #BACKPROPOGATE LIKE A MF
+        torch.autograd.backward([pce_loss, voc_loss, jsc_loss, ff_loss])
+        optimizer.step()
+        
+        #gather the loss
+        pce_loss_list.append(pce_loss.item())
+        voc_loss_list.append(voc_loss.item())
+        jsc_loss_list.append(jsc_loss.item())
+        voc_loss_list.append(ff_loss.item())
+        total_loss_list.append(total_loss.item())
+    
+    total_count = len(total_loss_list)
+    pce_epoch_loss = sum(pce_loss_list)/total_count
+    voc_epoch_loss = sum(voc_loss_list)/total_count
+    jsc_epoch_loss = sum(jsc_loss_list)/total_count
+    ff_epoch_loss = sum(ff_loss_list)/total_count
+    
+    return [pce_epoch_loss, voc_epoch_loss, jsc_epoch_loss, ff_epoch_loss]
+
+
 def train_OPV_total_model(model, training_data_set, criterion, optimizer):
     
 #     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')

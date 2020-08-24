@@ -409,7 +409,74 @@ class OPV_CV_im_dataset(torch.utils.data.Dataset):
         return im_tensor
     
     
-class OPV_CV_total_dataset(torch.utils.data.Dataset):
+class OPV_CV_mixed_dataset(torch.utils.data.Dataset):
+    """
+    This class takes in one set of image dictionaries and labels, and a
+    pandas dataframe to initialize a custom dataset class that inherets from PyTorch. 
+    
+    Assumes that only parts of im_dict will be used, as specified by 'index'. Meant for use
+    with k-fold cross-validation functions.
+    """
+    def __init__(self, im_dict, im_labels, tabular_data, index):
+        super(OPV_CV_mixed_dataset).__init__()
+        self.im_dict = {}
+        self.im_labels = im_labels
+        
+        self.tabular_data_dict = {}
+        
+        self.index = index
+        
+        new_indx = 0
+        for key, value in im_dict.items():
+            if key in index:
+                self.im_dict[new_indx] = im_dict[key]
+                self.tabular_data_dict[new_indx] = tabular_data.iloc[key]
+                new_indx += 1
+            else:
+                pass
+        
+        self.tab_data = pd.DataFrame.from_dict(self.tabular_data_dict, orient = 'index')
+
+    def __len__(self):
+        return len(self.im_dict)
+
+    
+    def __getitem__(self, key):
+        
+        im = self.im_dict[key]
+        self.im_tensor = self.convert_im_to_tensors(im)
+        
+        tab = self.tab_data.iloc[key]
+        self.tab_tensor = self.convert_label_to_tensors(tab)
+        
+        #only need to use labels from one dataset, since they
+        #should be the same for both
+        label_df = self.im_labels.iloc[key]
+        label_df = label_df[['PCE', 'VocL', 'Jsc', 'FF']]
+        self.label_tensor = self.convert_label_to_tensors(label_df)
+        
+        return self.im_tensor, self.tab_tensor, self.label_tensor
+    
+    
+    def convert_im_to_tensors(self, im):
+        
+        x, y, z = im.shape
+        
+        im_tensor = torch.from_numpy(im).float()
+        im_tensor = im_tensor.view(z, x, y)
+        
+        return im_tensor
+        
+        
+    def convert_label_to_tensors(self, label_df):
+        label_tensor =  torch.tensor(label_df).float()
+        label_tensor.view(-1,1)
+        label_tensor = label_tensor.squeeze()
+        
+        return label_tensor
+    
+    
+    class OPV_CV_total_dataset(torch.utils.data.Dataset):
     """
     This class takes in two sets of image dictionaries and labels, and a
     pandas dataframe to initialize a custom dataset class that inherets from PyTorch. 
@@ -921,6 +988,115 @@ def CV_OPV_CNN_fit(model, train_loader, test_loader, criterion, lr, epochs):
         ff_train_epoch_losses.append(ff_train_loss)
 
         test_losses, test_accs, test_r2s = test.eval_OPV_m2py_model(model = model,
+                                                                   test_data_set = test_loader,
+                                                                   criterion = criterion)
+        pce_test_epoch_losses.append(test_losses[0])
+        voc_test_epoch_losses.append(test_losses[1])
+        jsc_test_epoch_losses.append(test_losses[2])
+        ff_test_epoch_losses.append(test_losses[3])
+
+        tot_tst_loss = sum(test_losses)
+        test_epoch_losses.append(tot_tst_loss)
+
+        pce_test_epoch_accuracies.append(test_accs[0])
+        voc_test_epoch_accuracies.append(test_accs[1])
+        jsc_test_epoch_accuracies.append(test_accs[2])
+        ff_test_epoch_accuracies.append(test_accs[3])
+
+        tot_tst_acc = sum(test_accs)
+        test_epoch_accuracies.append(tot_tst_acc)
+
+        pce_test_epoch_r2.append(test_r2s[0])
+        voc_test_epoch_r2.append(test_r2s[1])
+        jsc_test_epoch_r2.append(test_r2s[2])
+        ff_test_epoch_r2.append(test_r2s[3])
+
+        tot_tst_r2 = sum(test_r2s)
+        test_epoch_r2s.append(tot_tst_r2)
+        
+        print('Finished epoch ', epoch)
+        
+    best_loss_indx = test_epoch_losses.index(min(test_epoch_losses))
+    best_acc_indx = test_epoch_accuracies.index(min(test_epoch_accuracies))
+    best_r2_indx = test_epoch_r2s.index(max(test_epoch_r2s))
+    
+    fit_results = {
+        'lr': lr,
+        'best_loss_epoch': best_loss_indx,
+        'best_acc_epoch': best_acc_indx,
+        'best_r2_epoch': best_r2_indx,
+        'pce_loss': pce_test_epoch_losses,
+        'voc_loss': voc_test_epoch_losses,
+        'jsc_loss': jsc_test_epoch_losses,
+        'ff_loss': ff_test_epoch_losses,
+        'test_losses': test_epoch_losses,        
+        'pce_acc': pce_test_epoch_accuracies,
+        'voc_acc': voc_test_epoch_accuracies,
+        'jsc_acc': jsc_test_epoch_accuracies,
+        'ff_acc': ff_test_epoch_accuracies,
+        'test_accs': test_epoch_accuracies,
+        'pce_r2': pce_test_epoch_r2,
+        'voc_r2': voc_test_epoch_r2,
+        'jsc_r2': jsc_test_epoch_r2,
+        'ff_r2': ff_test_epoch_r2,
+        'test_r2s': test_epoch_r2s,
+        'train_pce_loss': pce_train_epoch_losses,
+        'train_voc_loss': voc_train_epoch_losses,
+        'train_jsc_loss': jsc_train_epoch_losses,
+        'train_ff_loss': ff_train_epoch_losses
+    }
+
+    return fit_results
+
+
+def CV_OPV_mixed_fit(model, train_loader, test_loader, criterion, lr, epochs):
+    """
+    This function takes in a model and hyperparameters and performs a single
+    fit for a fold of data in k-fold cross-validation. This function returns
+    only the results and losses as a dictionary
+    """
+    #define the optimizer
+    #amsgrad switches b/w L2 reg and weight decay variants of AdamW
+    optimizer = torch.optim.AdamW(params = model.parameters(),
+                                  lr = lr,
+                                  amsgrad = True)
+        
+    #empty list to hold loss per epoch
+    train_epoch_losses = []
+    pce_train_epoch_losses = []
+    voc_train_epoch_losses = []
+    jsc_train_epoch_losses = []
+    ff_train_epoch_losses = []
+
+    test_epoch_losses = []
+    pce_test_epoch_losses = []
+    voc_test_epoch_losses = []
+    jsc_test_epoch_losses = []
+    ff_test_epoch_losses = []
+
+    pce_test_epoch_accuracies = []
+    voc_test_epoch_accuracies = []
+    jsc_test_epoch_accuracies = []
+    ff_test_epoch_accuracies = []
+    test_epoch_accuracies = []
+
+    pce_test_epoch_r2 = []
+    voc_test_epoch_r2 = []
+    jsc_test_epoch_r2 = []
+    ff_test_epoch_r2 = []
+    test_epoch_r2s = []
+
+    for epoch in range(epochs):
+        [pce_train_loss, voc_train_loss, jsc_train_loss, ff_train_loss] = train.train_OPV_mixed_model(model = model, training_data_set = train_loader, criterion = criterion, optimizer = optimizer)
+        
+        train_loss = pce_train_loss + voc_train_loss + jsc_train_loss + ff_train_loss
+        train_epoch_losses.append(train_loss)
+        pce_train_epoch_losses.append(pce_train_loss)
+        voc_train_epoch_losses.append(voc_train_loss)
+        jsc_train_epoch_losses.append(jsc_train_loss)
+        ff_train_epoch_losses.append(ff_train_loss)
+
+        test_losses, test_accs, test_r2s = test.eval_OPV_mixed_model(model = model,
                                                                    test_data_set = test_loader,
                                                                    criterion = criterion)
         pce_test_epoch_losses.append(test_losses[0])

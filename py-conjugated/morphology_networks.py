@@ -151,6 +151,97 @@ class OPV_m2py_NN(nn.Module):
     
     
 
+class OPV_mixed_NN(nn.Module):
+    """
+    This class calls three classes that are the data encoding branches whose
+    outputs are concatenated before being fed into the predictor.
+    
+    The image branch is for image-like data with the shape (in_channels x 256 x 256)
+    Branch three is for the tabular data (batchsize x in_dims)
+    """
+    def __init__(self, in_channels, in_dims):
+        super(OPV_mixed_NN, self).__init__()
+        
+        self.im_branch = nn.Sequential(
+            nn.Conv2d(in_channels, 32, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Conv2d(32, 64, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Conv2d(64, 64, kernel_size = 3, stride = 1, padding = 1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.Flatten(),
+            nn.Dropout(),
+            nn.Linear(65536, 5000),
+            nn.ReLU()
+        )
+        
+        self.tab_branch = nn.Sequential(
+            nn.Linear(in_dims, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 500),
+            nn.ReLU()
+        )
+        
+        self.pce_predictor = nn.Sequential(
+            nn.Linear(5500, 50000),
+            nn.ReLU(),
+            nn.Linear(50000, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 500),
+            nn.ReLU(),
+            nn.Linear(500, 1)
+        )
+        
+        self.voc_predictor = nn.Sequential(
+            nn.Linear(5500, 50000),
+            nn.ReLU(),
+            nn.Linear(50000, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 500),
+            nn.ReLU(),
+            nn.Linear(500, 1)
+        )
+        
+        self.jsc_predictor = nn.Sequential(
+            nn.Linear(5500, 50000),
+            nn.ReLU(),
+            nn.Linear(50000, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 500),
+            nn.ReLU(),
+            nn.Linear(500, 1)
+        )
+        
+        self.ff_predictor = nn.Sequential(
+            nn.Linear(5500, 50000),
+            nn.ReLU(),
+            nn.Linear(50000, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 500),
+            nn.ReLU(),
+            nn.Linear(500, 1)
+        )
+        
+    def forward(self, im, df):
+        im_enc = self.im_branch(im)
+        df_enc = self.tab_branch(df)
+        
+        im_enc = im_enc.view(-1)
+        df_enc = df_enc.view(-1)
+        
+        total_encoding = torch.cat([im_enc, df_enc])
+        
+        pce_out = self.pce_predictor(total_encoding)
+        voc_out = self.voc_predictor(total_encoding)
+        jsc_out = self.jsc_predictor(total_encoding)
+        ff_out = self.ff_predictor(total_encoding)
+        
+        return pce_out, voc_out, jsc_out, ff_out
+    
+    
 class OPV_total_NN(nn.Module):
     """
     This class calls three classes that are the data encoding branches whose
