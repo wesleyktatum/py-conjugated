@@ -186,41 +186,33 @@ class OPV_mixed_NN(nn.Module):
         )
         
         self.pce_predictor = nn.Sequential(
-            nn.Linear(154000, 50000),
+            nn.Linear(5500, 1000),
             nn.ReLU(),
-            nn.Linear(50000, 5000),
-            nn.ReLU(),
-            nn.Linear(5000, 500),
+            nn.Linear(1000, 500),
             nn.ReLU(),
             nn.Linear(500, 1)
         )
         
         self.voc_predictor = nn.Sequential(
-            nn.Linear(154000, 50000),
+            nn.Linear(5500, 1000),
             nn.ReLU(),
-            nn.Linear(50000, 5000),
-            nn.ReLU(),
-            nn.Linear(5000, 500),
+            nn.Linear(1000, 500),
             nn.ReLU(),
             nn.Linear(500, 1)
         )
         
         self.jsc_predictor = nn.Sequential(
-            nn.Linear(154000, 50000),
+            nn.Linear(5500, 1000),
             nn.ReLU(),
-            nn.Linear(50000, 5000),
-            nn.ReLU(),
-            nn.Linear(5000, 500),
+            nn.Linear(1000, 500),
             nn.ReLU(),
             nn.Linear(500, 1)
         )
         
         self.ff_predictor = nn.Sequential(
-            nn.Linear(154000, 50000),
+            nn.Linear(5500, 1000),
             nn.ReLU(),
-            nn.Linear(50000, 5000),
-            nn.ReLU(),
-            nn.Linear(5000, 500),
+            nn.Linear(1000, 500),
             nn.ReLU(),
             nn.Linear(500, 1)
         )
@@ -229,13 +221,13 @@ class OPV_mixed_NN(nn.Module):
         im_enc = self.im_branch(im)
         df_enc = self.tab_branch(df)
         
-        im_enc = im_enc.view(-1)
-        df_enc = df_enc.view(-1)
-        
         print(im_enc.size())
         print(df_enc.size())
         
-        total_encoding = torch.cat([im_enc, df_enc], -1)
+        #when flattened, dim = 0 is sample index. dim = 1 is sample values
+        total_encoding = torch.cat([im_enc, df_enc], dim = 1)
+        
+        print(total_encoding.size())
         
         pce_out = self.pce_predictor(total_encoding)
         voc_out = self.voc_predictor(total_encoding)
