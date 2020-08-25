@@ -186,7 +186,7 @@ class OPV_mixed_NN(nn.Module):
         )
         
         self.pce_predictor = nn.Sequential(
-            nn.Linear(5500, 50000),
+            nn.Linear(154000, 50000),
             nn.ReLU(),
             nn.Linear(50000, 5000),
             nn.ReLU(),
@@ -196,7 +196,7 @@ class OPV_mixed_NN(nn.Module):
         )
         
         self.voc_predictor = nn.Sequential(
-            nn.Linear(5500, 50000),
+            nn.Linear(154000, 50000),
             nn.ReLU(),
             nn.Linear(50000, 5000),
             nn.ReLU(),
@@ -206,7 +206,7 @@ class OPV_mixed_NN(nn.Module):
         )
         
         self.jsc_predictor = nn.Sequential(
-            nn.Linear(5500, 50000),
+            nn.Linear(154000, 50000),
             nn.ReLU(),
             nn.Linear(50000, 5000),
             nn.ReLU(),
@@ -216,7 +216,7 @@ class OPV_mixed_NN(nn.Module):
         )
         
         self.ff_predictor = nn.Sequential(
-            nn.Linear(5500, 50000),
+            nn.Linear(154000, 50000),
             nn.ReLU(),
             nn.Linear(50000, 5000),
             nn.ReLU(),
@@ -232,7 +232,10 @@ class OPV_mixed_NN(nn.Module):
         im_enc = im_enc.view(-1)
         df_enc = df_enc.view(-1)
         
-        total_encoding = torch.cat([im_enc, df_enc])
+        print(im_enc.size())
+        print(df_enc.size())
+        
+        total_encoding = torch.cat([im_enc, df_enc], -1)
         
         pce_out = self.pce_predictor(total_encoding)
         voc_out = self.voc_predictor(total_encoding)

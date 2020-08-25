@@ -452,7 +452,7 @@ class OPV_CV_mixed_dataset(torch.utils.data.Dataset):
         #only need to use labels from one dataset, since they
         #should be the same for both
         label_df = self.im_labels.iloc[key]
-        label_df = label_df[['PCE', 'VocL', 'Jsc', 'FF']]
+        label_df = label_df.drop(['Anneal_time', 'Anneal_temp', 'Substrate', 'Device'])
         self.label_tensor = self.convert_label_to_tensors(label_df)
         
         return self.im_tensor, self.tab_tensor, self.label_tensor
@@ -476,7 +476,7 @@ class OPV_CV_mixed_dataset(torch.utils.data.Dataset):
         return label_tensor
     
     
-    class OPV_CV_total_dataset(torch.utils.data.Dataset):
+class OPV_CV_total_dataset(torch.utils.data.Dataset):
     """
     This class takes in two sets of image dictionaries and labels, and a
     pandas dataframe to initialize a custom dataset class that inherets from PyTorch. 
