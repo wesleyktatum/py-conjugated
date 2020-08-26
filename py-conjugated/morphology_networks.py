@@ -221,14 +221,9 @@ class OPV_mixed_NN(nn.Module):
         im_enc = self.im_branch(im)
         df_enc = self.tab_branch(df)
         
-        print(im_enc.size())
-        print(df_enc.size())
-        
         #when flattened, dim = 0 is sample index. dim = 1 is sample values
         total_encoding = torch.cat([im_enc, df_enc], dim = 1)
-        
-        print(total_encoding.size())
-        
+                
         pce_out = self.pce_predictor(total_encoding)
         voc_out = self.voc_predictor(total_encoding)
         jsc_out = self.jsc_predictor(total_encoding)
@@ -289,9 +284,7 @@ class OPV_total_NN(nn.Module):
         )
         
         self.pce_predictor = nn.Sequential(
-            nn.Linear(294000, 50000),
-            nn.ReLU(),
-            nn.Linear(50000, 5000),
+            nn.Linear(10500, 5000),
             nn.ReLU(),
             nn.Linear(5000, 500),
             nn.ReLU(),
@@ -299,9 +292,7 @@ class OPV_total_NN(nn.Module):
         )
         
         self.voc_predictor = nn.Sequential(
-            nn.Linear(294000, 50000),
-            nn.ReLU(),
-            nn.Linear(50000, 5000),
+            nn.Linear(10500, 5000),
             nn.ReLU(),
             nn.Linear(5000, 500),
             nn.ReLU(),
@@ -309,9 +300,7 @@ class OPV_total_NN(nn.Module):
         )
         
         self.jsc_predictor = nn.Sequential(
-            nn.Linear(294000, 50000),
-            nn.ReLU(),
-            nn.Linear(50000, 5000),
+            nn.Linear(10500, 5000),
             nn.ReLU(),
             nn.Linear(5000, 500),
             nn.ReLU(),
@@ -319,9 +308,7 @@ class OPV_total_NN(nn.Module):
         )
         
         self.ff_predictor = nn.Sequential(
-            nn.Linear(294000, 50000),
-            nn.ReLU(),
-            nn.Linear(50000, 5000),
+            nn.Linear(10500, 5000),
             nn.ReLU(),
             nn.Linear(5000, 500),
             nn.ReLU(),
@@ -333,11 +320,7 @@ class OPV_total_NN(nn.Module):
         m2py_enc = self.m2py_branch(m2py)
         df_enc = self.tab_branch(df)
         
-        afm_enc = afm_enc.view(-1)
-        m2py_enc = m2py_enc.view(-1)
-        df_enc = df_enc.view(-1)
-        
-        total_encoding = torch.cat([afm_enc, m2py_enc, df_enc])
+        total_encoding = torch.cat([afm_enc, m2py_enc, df_enc], dim = 1)
         
         pce_out = self.pce_predictor(total_encoding)
         voc_out = self.voc_predictor(total_encoding)
