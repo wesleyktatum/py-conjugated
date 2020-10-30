@@ -261,7 +261,7 @@ class OPV_total_NN(nn.Module):
         )
         
         self.m2py_branch = nn.Sequential(
-            nn.Conv2d(2, 32, kernel_size = 3, stride = 1, padding = 1),
+            nn.Conv2d(3, 32, kernel_size = 3, stride = 1, padding = 1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size = 2, stride = 2),
             nn.Conv2d(32, 64, kernel_size = 3, stride = 1, padding = 1),

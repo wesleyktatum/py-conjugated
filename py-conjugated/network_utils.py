@@ -409,6 +409,14 @@ class OPV_CV_im_dataset(torch.utils.data.Dataset):
         return im_tensor
     
     
+    def convert_label_to_tensors(self, label_df):
+        label_tensor =  torch.tensor(label_df).float()
+        label_tensor.view(-1,1)
+        label_tensor = label_tensor.squeeze()
+        
+        return label_tensor
+    
+    
 class OPV_CV_mixed_dataset(torch.utils.data.Dataset):
     """
     This class takes in one set of image dictionaries and labels, and a
